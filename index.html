@@ -13,9 +13,17 @@
 </head>
 <body>
   <a class="skip" href="#main">Skip to main content</a>
-  <header>
-    <h1>EventMate AI</h1>
-    <p>Plan a wedding, birthday or community event: budget, timeline, vendors and ideas, in seconds.</p>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Weddings · Birthdays · Community events</p>
+      <h1><span class="logo" aria-hidden="true">🎉</span> EventMate AI</h1>
+      <p class="tagline">Plan your event in seconds: budget, timeline, vendors and ideas, all in one place.</p>
+      <ul class="pills" aria-label="Highlights">
+        <li>Works offline</li>
+        <li>No sign-up</li>
+        <li>Your data stays in your browser</li>
+      </ul>
+    </div>
   </header>
 
   <main id="main">
@@ -112,12 +120,14 @@
 
       <section class="card" aria-labelledby="budget-heading">
         <h3 id="budget-heading">Budget split</h3>
+        <div class="table-wrap" tabindex="0" role="region" aria-labelledby="budget-heading">
         <table>
           <caption class="sr-only">Budget allocation by category</caption>
           <thead><tr><th scope="col">Category</th><th scope="col">Share</th><th scope="col" class="num">Amount</th><th scope="col"><span class="sr-only">Chart</span></th></tr></thead>
           <tbody id="budget-body"></tbody>
           <tfoot><tr><th scope="row">Total</th><td>100%</td><td class="num" id="budget-total"></td><td></td></tr></tfoot>
         </table>
+        </div>
         <p id="catering-note" class="meta"></p>
       </section>
 
