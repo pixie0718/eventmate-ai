@@ -2,6 +2,7 @@
 import { validateInput, PREFS } from './validate.js';
 import { buildPlan, parseDate, daysBetween } from './planner.js';
 import { requestAiIdeas, isValidKey } from './ai.js';
+import { donutSegments, DONUT_RADIUS } from './chart.js';
 
 const STORAGE_KEY = 'eventmate:v1';
 const $ = (id) => document.getElementById(id);
@@ -82,15 +83,41 @@ function renderSummary(plan) {
   for (const w of budget.warnings) notes.append(el('p', { class: 'notice', text: w }));
 }
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs = {}, text) {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function renderDonut(plan) {
+  const { budget, input } = plan;
+  const svg = svgEl('svg', { viewBox: '0 0 42 42', role: 'img', class: 'donut-svg',
+    'aria-label': `Budget split: ${budget.lines.map((l) => `${l.label} ${l.pct}%`).join(', ')}.` });
+  svg.append(svgEl('circle', { class: 'donut-track', cx: 21, cy: 21, r: DONUT_RADIUS, fill: 'none', 'stroke-width': 6 }));
+  for (const seg of donutSegments(budget.lines)) {
+    svg.append(svgEl('circle', {
+      class: `seg c${seg.colorIndex}`, cx: 21, cy: 21, r: DONUT_RADIUS, fill: 'none', 'stroke-width': 6,
+      'stroke-dasharray': seg.dash, 'stroke-dashoffset': seg.offset,
+    }));
+  }
+  svg.append(svgEl('text', { class: 'donut-label', x: 21, y: 20.5, 'text-anchor': 'middle' }, 'Total'));
+  svg.append(svgEl('text', { class: 'donut-total', x: 21, y: 25.5, 'text-anchor': 'middle' },
+    new Intl.NumberFormat(undefined, { style: 'currency', currency: input.currency, notation: 'compact', maximumFractionDigits: 1 }).format(budget.total)));
+  $('donut').replaceChildren(svg);
+}
+
 function renderBudget(plan) {
+  renderDonut(plan);
   const { budget, input } = plan;
   const body = $('budget-body');
-  body.replaceChildren(...budget.lines.map((l) => {
+  body.replaceChildren(...budget.lines.map((l, i) => {
     const fill = el('span', { class: 'fill' });
     fill.style.width = `${l.pct}%`; // CSSOM is allowed under the CSP; an inline style attribute is not
     const bar = el('span', { class: 'bar', 'aria-hidden': 'true' }, fill);
     return el('tr', {},
-      el('th', { scope: 'row', text: l.label }),
+      el('th', { scope: 'row' }, el('span', { class: `swatch c${i % 8}`, 'aria-hidden': 'true' }), l.label),
       el('td', { text: `${l.pct}%` }),
       el('td', { class: 'num', text: fmtMoney(l.amount, input.currency) }),
       el('td', {}, bar));

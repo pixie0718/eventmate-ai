@@ -44,7 +44,7 @@ Budget amounts use largest-remainder rounding, so the lines **always add up exac
 Skip link, labelled controls, `aria-invalid` + `role="alert"` errors with focus on the first bad field, programmatic focus on results, `aria-live` status messages, real `<table>` and checkbox lists (chart bars are decorative), 44 px touch targets, visible focus, light/dark themes, reduced-motion support and a print stylesheet.
 
 ## Testing
-`tests/` (33 tests): budget invariants across all types/preferences, timeline compression and ordering, context-driven vendors/ideas, determinism, input validation edge cases, AI prompt/response parsing, error mapping, timeouts, and static security/accessibility guards (CSP, no inline code, no dangerous sinks, labels). CI runs them on every push.
+`tests/` (38 tests): budget invariants across all types/preferences, timeline compression and ordering, context-driven vendors/ideas, determinism, input validation edge cases, AI prompt/response parsing, error mapping, timeouts, and static security/accessibility guards (CSP, no inline code, no dangerous sinks, labels). CI runs them on every push.
 
 ## Structure
 ```
@@ -53,6 +53,7 @@ css/styles.css
 js/validate.js    input validation & sanitising (pure)
 js/planner.js     budget / timeline / vendors / ideas engine (pure)
 js/ai.js          optional Claude call + response validation
+js/chart.js       donut chart geometry (pure)
 js/app.js         DOM wiring
 tests/            node:test suites
 ```

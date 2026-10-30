@@ -77,6 +77,17 @@ footer { color: var(--muted); padding-bottom: 2rem; font-size: .9rem; }
 
 /* Mobile */
 .table-wrap { overflow-x: auto; }
+:root { --c0:#5b2bd9; --c1:#e4572e; --c2:#17a398; --c3:#f2a900; --c4:#2e86de; --c5:#c2185b; --c6:#6a994e; --c7:#7f8c8d; }
+@media (prefers-color-scheme: dark) { :root { --c0:#a78bfa; --c1:#ff8a65; --c2:#4fd1c5; --c3:#ffd166; --c4:#74b9ff; --c5:#f48fb1; --c6:#a5d6a7; --c7:#b0bec5; } }
+.budget-grid { display: grid; grid-template-columns: minmax(10rem, 15rem) 1fr; gap: 1rem 1.5rem; align-items: center; }
+#donut { max-width: 15rem; width: 100%; margin: 0 auto; }
+.donut-svg { display: block; width: 100%; height: auto; }
+.donut-track { stroke: var(--border); }
+.donut-svg .seg { stroke: var(--c0); }
+.donut-label { fill: var(--muted); font-size: 2.6px; }
+.donut-total { fill: var(--text); font-size: 4.6px; font-weight: 800; }
+.swatch { display: inline-block; width: .8rem; height: .8rem; border-radius: 3px; margin-right: .5rem; vertical-align: -1px; background: var(--c0); }
+@media (max-width: 40rem) { .budget-grid { grid-template-columns: 1fr; } }
 @media (max-width: 40rem) {
   main, footer, .wrap { padding: 0 .75rem; }
   .card { padding: 1rem; border-radius: 12px; }
@@ -93,6 +104,14 @@ footer { color: var(--muted); padding-bottom: 2rem; font-size: .9rem; }
 }
 @media (max-width: 22rem) { .stats { grid-template-columns: 1fr 1fr; } .tl-date .day { font-size: 1.15rem; } }
 
+.c0.seg { stroke: var(--c0); } .c0.swatch { background: var(--c0); }
+.c1.seg { stroke: var(--c1); } .c1.swatch { background: var(--c1); }
+.c2.seg { stroke: var(--c2); } .c2.swatch { background: var(--c2); }
+.c3.seg { stroke: var(--c3); } .c3.swatch { background: var(--c3); }
+.c4.seg { stroke: var(--c4); } .c4.swatch { background: var(--c4); }
+.c5.seg { stroke: var(--c5); } .c5.swatch { background: var(--c5); }
+.c6.seg { stroke: var(--c6); } .c6.swatch { background: var(--c6); }
+.c7.seg { stroke: var(--c7); } .c7.swatch { background: var(--c7); }
 /* Timeline */
 .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
 .tl-item { --c: var(--accent); display: grid; grid-template-columns: 3.4rem 1.6rem 1fr; align-items: start; gap: 0 .5rem; position: relative; padding-bottom: 1rem; }
