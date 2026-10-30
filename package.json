@@ -1,0 +1,13 @@
+{
+  "name": "eventmate-ai",
+  "version": "1.0.0",
+  "description": "Frontend-only planning assistant for weddings, birthdays and community events.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\"",
+    "start": "python -m http.server 8080"
+  },
+  "engines": { "node": ">=20" }
+}

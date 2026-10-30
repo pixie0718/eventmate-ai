@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://api.anthropic.com; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="EventMate AI plans weddings, birthdays and community events: budget split, timeline, vendor checklist and personalised ideas. Runs fully in your browser.">
+  <title>EventMate AI</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%8E%89%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to main content</a>
+  <header>
+    <h1>EventMate AI</h1>
+    <p>Plan a wedding, birthday or community event: budget, timeline, vendors and ideas, in seconds.</p>
+  </header>
+
+  <main id="main">
+    <section aria-labelledby="form-heading" class="card">
+      <h2 id="form-heading">Tell us about your event</h2>
+      <form id="planner-form" novalidate>
+        <div class="grid">
+          <div class="field">
+            <label for="type">Event type</label>
+            <select id="type" name="type" aria-describedby="err-type" required>
+              <option value="wedding">Wedding</option>
+              <option value="birthday">Birthday</option>
+              <option value="community">Community event</option>
+            </select>
+            <span class="error" id="err-type" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="name">Event name</label>
+            <input id="name" name="name" type="text" maxlength="60" autocomplete="off" placeholder="e.g. Aarav &amp; Meera" aria-describedby="err-name" required>
+            <span class="error" id="err-name" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="date">Date</label>
+            <input id="date" name="date" type="date" aria-describedby="err-date" required>
+            <span class="error" id="err-date" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="guests">Guests</label>
+            <input id="guests" name="guests" type="number" min="1" max="5000" step="1" inputmode="numeric" value="100" aria-describedby="err-guests" required>
+            <span class="error" id="err-guests" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="budget">Total budget</label>
+            <input id="budget" name="budget" type="number" min="1" step="1" inputmode="numeric" value="500000" aria-describedby="err-budget" required>
+            <span class="error" id="err-budget" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="currency">Currency</label>
+            <select id="currency" name="currency" aria-describedby="err-currency">
+              <option value="INR">INR (₹)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+            </select>
+            <span class="error" id="err-currency" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="city">City <span class="hint">(optional)</span></label>
+            <input id="city" name="city" type="text" maxlength="60" autocomplete="address-level2">
+          </div>
+          <div class="field">
+            <label for="vibe">Style</label>
+            <select id="vibe" name="vibe" aria-describedby="err-vibe">
+              <option value="modern">Modern</option>
+              <option value="traditional">Traditional</option>
+              <option value="rustic">Rustic</option>
+              <option value="fun">Fun &amp; playful</option>
+              <option value="elegant">Elegant</option>
+            </select>
+            <span class="error" id="err-vibe" role="alert"></span>
+          </div>
+        </div>
+
+        <fieldset>
+          <legend>Preferences <span class="hint">(they change the budget, vendors and ideas)</span></legend>
+          <label class="check"><input type="checkbox" name="prefs" value="outdoor"> Outdoor</label>
+          <label class="check"><input type="checkbox" name="prefs" value="kids"> Kids attending</label>
+          <label class="check"><input type="checkbox" name="prefs" value="elders"> Elders attending</label>
+          <label class="check"><input type="checkbox" name="prefs" value="vegetarian"> Vegetarian menu</label>
+          <label class="check"><input type="checkbox" name="prefs" value="lowkey"> Low-key &amp; intimate</label>
+          <label class="check"><input type="checkbox" name="prefs" value="tech"> Tech / live-stream</label>
+        </fieldset>
+
+        <button type="submit" class="primary">Create my plan</button>
+      </form>
+    </section>
+
+    <div id="results" hidden>
+      <div class="toolbar">
+        <h2 id="results-heading" tabindex="-1">Your plan</h2>
+        <div>
+          <button type="button" id="print-button">Print / save as PDF</button>
+          <button type="button" id="download-button">Download JSON</button>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <label for="progress">Checklist progress</label>
+        <progress id="progress" max="100" value="0"></progress>
+        <span id="progress-text" aria-live="polite"></span>
+      </div>
+
+      <div id="notices" role="status"></div>
+      <dl id="summary" class="stats"></dl>
+
+      <section class="card" aria-labelledby="budget-heading">
+        <h3 id="budget-heading">Budget split</h3>
+        <table>
+          <caption class="sr-only">Budget allocation by category</caption>
+          <thead><tr><th scope="col">Category</th><th scope="col">Share</th><th scope="col" class="num">Amount</th><th scope="col"><span class="sr-only">Chart</span></th></tr></thead>
+          <tbody id="budget-body"></tbody>
+          <tfoot><tr><th scope="row">Total</th><td>100%</td><td class="num" id="budget-total"></td><td></td></tr></tfoot>
+        </table>
+        <p id="catering-note" class="meta"></p>
+      </section>
+
+      <section class="card" aria-labelledby="timeline-heading">
+        <h3 id="timeline-heading">Timeline</h3>
+        <ul class="checklist" id="timeline-list"></ul>
+      </section>
+
+      <section class="card" aria-labelledby="vendor-heading">
+        <h3 id="vendor-heading">Vendor checklist</h3>
+        <ul class="checklist" id="vendor-list"></ul>
+      </section>
+
+      <section class="card" aria-labelledby="ideas-heading">
+        <h3 id="ideas-heading">Personalised ideas</h3>
+        <ul class="ideas" id="idea-list"></ul>
+      </section>
+
+      <section class="card" aria-labelledby="ai-heading">
+        <h3 id="ai-heading">Want more ideas from Claude? <span class="hint">(optional)</span></h3>
+        <p class="meta">Everything above works offline. This extra step sends your event details (not your key anywhere else) straight from your browser to Anthropic using your own API key. The key stays in memory and is gone when you close or reload the tab. Use a key with a spending limit.</p>
+        <div class="field">
+          <label for="api-key">Anthropic API key</label>
+          <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
+        </div>
+        <div class="field">
+          <label for="ai-notes">Anything special? <span class="hint">(optional, max 500 characters)</span></label>
+          <textarea id="ai-notes" maxlength="500" rows="3"></textarea>
+        </div>
+        <button type="button" id="ai-button">Get AI ideas</button>
+        <p id="ai-status" role="status" aria-live="polite"></p>
+        <ul class="ideas" id="ai-results"></ul>
+      </section>
+    </div>
+  </main>
+
+  <footer><p>Plans are estimates, not professional advice. Your data stays in this browser.</p></footer>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
