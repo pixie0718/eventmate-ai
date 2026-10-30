@@ -1,6 +1,6 @@
 // UI wiring. All user/AI text goes in via textContent (no HTML parsing) to prevent XSS.
 import { validateInput, PREFS } from './validate.js';
-import { buildPlan, parseDate } from './planner.js';
+import { buildPlan, parseDate, daysBetween } from './planner.js';
 import { requestAiIdeas, isValidKey } from './ai.js';
 
 const STORAGE_KEY = 'eventmate:v1';
@@ -110,9 +110,53 @@ function checkbox(id, label, extra) {
   return el('li', {}, input, el('label', { for: id }, el('span', { class: 'title', text: label }), ...extra));
 }
 
+function startOfToday() {
+  const t = new Date();
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+}
+
+function whenLabel(days) {
+  if (days === 0) return 'Today';
+  if (days > 0) return `in ${days} day${days === 1 ? '' : 's'}`;
+  return `${-days} day${days === -1 ? '' : 's'} ago`;
+}
+
+function timelineState(done, days, isEvent) {
+  if (done) return 'done';
+  if (isEvent) return 'event';
+  if (days < 0) return 'overdue';
+  return days === 0 ? 'today' : 'upcoming';
+}
+
 function renderTimeline(plan) {
-  $('timeline-list').replaceChildren(...plan.timeline.milestones.map((m) =>
-    checkbox(`chk-${m.id}`, m.title, [el('span', { class: 'meta', text: `${fmtDate(m.date)} · ${m.detail}` })])));
+  const today = startOfToday();
+  $('timeline-list').replaceChildren(...plan.timeline.milestones.map((m) => {
+    const date = parseDate(m.date);
+    const days = daysBetween(today, date);
+    const id = `chk-${m.id}`;
+    const input = el('input', { type: 'checkbox', id });
+    input.checked = Boolean(state.checked?.[id]);
+    const when = el('span', { class: 'tl-when', text: whenLabel(days) });
+    const li = el('li', { class: 'tl-item' },
+      el('div', { class: 'tl-date', 'aria-hidden': 'true' },
+        el('span', { class: 'day', text: String(date.getDate()) }),
+        el('span', { class: 'mon', text: new Intl.DateTimeFormat(undefined, { month: 'short' }).format(date) })),
+      el('span', { class: 'tl-dot', 'aria-hidden': 'true' }),
+      el('div', { class: 'tl-card' }, input,
+        el('label', { for: id },
+          el('span', { class: 'title', text: m.title }),
+          el('span', { class: 'meta', text: `${fmtDate(m.date)} · ${m.detail}` }),
+          when)));
+    const refresh = () => { li.dataset.state = timelineState(input.checked, days, m.daysBefore === 0); };
+    refresh();
+    input.addEventListener('change', () => {
+      state.checked = { ...state.checked, [id]: input.checked };
+      save(state);
+      refresh();
+      updateProgress();
+    });
+    return li;
+  }));
 }
 
 function renderVendors(plan) {
