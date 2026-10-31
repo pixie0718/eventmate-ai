@@ -28,7 +28,7 @@ function describeEvent({ input, budget }) {
     `Name: ${input.name}`,
     `City: ${input.city || 'not given'}`,
     `Style: ${input.vibe}`,
-    `Guests: ${input.guests}`,
+    `Guests: ${input.guests} people in total (do not assume they are all children or all adults)`,
     `Budget: ${budget.total} ${input.currency} (${budget.perGuest} per guest)`,
     `Preferences: ${input.prefs.join(', ') || 'none'}`,
   ];
@@ -69,13 +69,15 @@ export function buildChatPrompt(plan, question) {
   const { budget, timeline } = plan;
   return [
     'You are an event-planning assistant answering one question about the plan below.',
-    'Answer in at most 90 words of plain text (no markdown, no HTML). Be practical and specific.',
+    'Answer in at most 90 words of plain text (no markdown, no HTML). Be practical and specific, and answer the question first.',
+    'Use only the facts below; if something is not given, say so instead of guessing. Write dates like "3 Feb 2027".',
     'The budget figures below were calculated by the app. If you reallocate money, show your arithmetic and keep the total consistent.',
     '',
     ...describeEvent(plan),
     ...budget.lines.map((l) => `Line: ${l.label} = ${l.amount} ${plan.input.currency} (${l.pct}%)`),
     `Days available: ${timeline.daysAvailable}`,
     `Next milestones: ${timeline.milestones.slice(0, 5).map((m) => `${m.date} ${m.title}`).join('; ')}`,
+    `Vendors to book (priority, book by): ${plan.vendors.slice(0, 6).map((v) => `${v.name} (${v.priority}, ${v.bookBy})`).join('; ')}`,
     '',
     ...fence('user_question', question, MAX_QUESTION),
   ].join('\n');

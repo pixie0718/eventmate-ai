@@ -1,6 +1,8 @@
 # EventMate AI
 
-A frontend-only planning assistant for **weddings, birthdays and community events**. Enter the basics and get a budget split, a dated timeline, a vendor checklist and personalised ideas. The plan itself runs entirely in the browser; a tiny Node server only proxies the optional AI step (DeepSeek) so the key stays server-side.
+**Live demo:** https://adorable-douhua-11ee23.netlify.app/
+
+A browser-based planning assistant for **weddings, birthdays and community events**. Enter the basics and get a budget split, a dated timeline, a vendor checklist and personalised ideas. The plan itself runs entirely in the browser; a tiny server-side function (Node locally, a Netlify Function in production) only proxies the optional AI step (DeepSeek) so the key stays server-side.
 
 ## Chosen vertical
 **Celebration & Event Planner.** A GenAI-powered assistant that helps people organise weddings, birthdays and community events with budgets, timelines, vendor checklists and personalised ideas.
