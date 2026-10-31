@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -p jsconfig.json",
     "check": "npm run lint && npm run typecheck && npm test",
-    "test:coverage": "node --test --experimental-test-coverage \"tests/*.test.js\""
+    "test:coverage": "node --test --experimental-test-coverage \"tests/*.test.js\"",
+    "build": "node scripts/build-static.js"
   },
   "engines": {
     "node": ">=20"

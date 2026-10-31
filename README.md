@@ -3,7 +3,23 @@
 A frontend-only planning assistant for **weddings, birthdays and community events**. Enter the basics and get a budget split, a dated timeline, a vendor checklist and personalised ideas. The plan itself runs entirely in the browser; a tiny Node server only proxies the optional AI step (DeepSeek) so the key stays server-side.
 
 ## Chosen vertical
-Event planning with three personas: a **wedding couple**, a **birthday host** and a **community organiser**. Each persona has its own budget template, timeline, vendor list and idea pool.
+**Celebration & Event Planner.** A GenAI-powered assistant that helps people organise weddings, birthdays and community events with budgets, timelines, vendor checklists and personalised ideas.
+
+| Persona | Core need | What changes in the plan |
+|---|---|---|
+| A **wedding couple** | Long lead times, many vendors, a big budget to protect | 365-day timeline, 8 budget lines, officiant, attire and decor vendors |
+| A **birthday host** | A short runway and a tight budget; fun over formality | 60-day timeline, cake and entertainment lines, kids and games ideas |
+| A **community organiser** | Permits, safety and volunteers on a small budget | 90-day timeline, permits, first aid, AV and outreach vendors |
+
+## Problem-statement alignment
+| Challenge expectation | How EventMate AI meets it |
+|---|---|
+| Smart, dynamic assistant | Form → rule engine → optional AI personalisation and a Q&A chat, all driven by the user's own context |
+| Logical decision making from user context | Event type, days left, budget per guest, kids/elders/outdoor/tech preferences and guest count each change the budget split, deadlines, vendors and ideas; tight schedules compress every deadline |
+| Practical, real-world usability | Real currencies, realistic lead times, a ticked checklist that is remembered, print/PDF and JSON export, works without AI |
+| Clean, maintainable code | Small pure modules, data separated from logic, JSDoc types checked by `tsc`, ESLint, 69 tests |
+| Security | Key only on the server, strict CSP, validated input and AI output, prompt-injection fencing, rate limiting |
+| Accessibility | Axe-audited, WCAG AA contrast tests, labelled controls, keyboard and screen-reader friendly |
 
 ## Run it
 ES modules need `http://`, not `file://`. `server.js` (no runtime dependencies; ESLint and TypeScript are dev-only) serves the app and proxies the optional AI step to DeepSeek:
@@ -15,6 +31,7 @@ npm test           # Node 20+ built-in test runner
 npm run lint       # ESLint
 npm run typecheck  # JSDoc types checked with tsc (no build step)
 npm run check      # all three
+npm run build      # dist/ for Netlify
 ```
 It also deploys as-is to GitHub Pages (static files only).
 
@@ -52,6 +69,15 @@ How it works:
 - **Fallback:** if there is no key, or the AI fails or times out, the full rule-based plan is already on screen. The page says clearly that AI is off, and the AI buttons are disabled. `/api/status` tells the browser whether a key exists (never the key itself).
 - **Prompt-injection hardening:** notes and questions are fenced as untrusted data, and control characters and fake closing tags are stripped.
 
+## Deploy (Netlify)
+The repo is ready for Netlify (`netlify.toml`): the build copies only `index.html`, `css/` and `js/` into `dist/`, and one Netlify Function (`netlify/functions/api.js`) serves `/api/status`, `/api/personalize` and `/api/chat`.
+1. Import the repo in Netlify (build settings are read from `netlify.toml`).
+2. Under *Site configuration → Environment variables* add `DEEPSEEK_API_KEY` (and optionally `DEEPSEEK_MODEL`, default `deepseek-chat`).
+3. Make sure *Site protection* (password / login) is off, so visitors can open the site.
+4. Redeploy. Open `/api/status`: it should answer `{"ai":true}`.
+
+Netlify's free plan stops a function after about 10 s, so the function gives DeepSeek 8.5 s and then returns a clean `504`. The prompts are kept short (personalise about 4 s, chat about 2 s in testing), and if the AI is slow or off the page still shows the complete rule-based plan.
+
 ## Security
 - The server sends security headers on every response: the CSP (also in the page), `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: no-referrer` and a restrictive `Permissions-Policy`. API answers are `no-store`.
 - No accounts, no analytics, no third-party scripts. The only server code is `server.js` (static files + AI proxy).
@@ -68,7 +94,7 @@ How it works:
 Axe audit and contrast tests run in CI. Skip link, labelled controls, `aria-invalid` + `role="alert"` errors with focus on the first bad field, programmatic focus on results, `aria-live` status messages, real `<table>` and checkbox lists (chart bars are decorative), 44 px touch targets, visible focus, light/dark themes, reduced-motion support and a print stylesheet.
 
 ## Testing
-`tests/` (62 tests, about 97% line coverage via `npm run test:coverage`): budget invariants across all types/preferences, timeline compression and ordering, context-driven vendors/ideas, determinism, input validation edge cases, AI prompts and response parsing, personalisation and chat requests, error mapping, timeouts, the AI-status fallback, the server (static allow-list, key stays server-side, validation, cooldown), browser-level UI tests (the real page and `app.js` in jsdom: validation, rendering, ticking tasks, AI boxes, chat, failure fallback), an axe accessibility audit of the rendered page, WCAG AA colour-contrast maths for both themes, and static security guards (CSP, no inline code, no dangerous sinks, labels). CI runs them on every push.
+`tests/` (69 tests, about 97% line coverage via `npm run test:coverage`): budget invariants across all types/preferences, timeline compression and ordering, context-driven vendors/ideas, determinism, input validation edge cases, AI prompts and response parsing, personalisation and chat requests, error mapping, timeouts, the AI-status fallback, the server and the Netlify function (static allow-list, key stays server-side, validation, cooldown, timeouts, build output), browser-level UI tests (the real page and `app.js` in jsdom: validation, rendering, ticking tasks, AI boxes, chat, failure fallback), an axe accessibility audit of the rendered page, WCAG AA colour-contrast maths for both themes, and static security guards (CSP, no inline code, no dangerous sinks, labels). CI runs them on every push.
 
 ## How the solution works
 1. The user fills in one form: event type, name, date, guests, budget, currency, city, style and preferences.
@@ -82,7 +108,11 @@ Axe audit and contrast tests run in CI. Skip link, labelled controls, `aria-inva
 ```
 index.html          page + CSP
 css/styles.css
-server.js           static files + AI proxy (holds the key)
+server.js           local / Node host: static files + the API
+api/handlers.js     the API logic shared by server.js and Netlify (key, validation, rate limit, DeepSeek call)
+netlify/functions/  Netlify Function wrapper around api/handlers.js
+scripts/            build-static.js (publishes only the browser files to dist/)
+netlify.toml        Netlify build, function and security headers
 js/app.js           entry point: state and wiring
 js/dates.js         calendar-date helpers (pure)
 js/validate.js      input validation & sanitising (pure)

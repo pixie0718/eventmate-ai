@@ -51,7 +51,8 @@ export function buildPrompt(plan, notes) {
     'You are an event-planning assistant. Personalise the plan below for this specific event.',
     'Reply with ONLY a JSON object:',
     '{"ideas":[{"title":"","description":""}],"vendorTasks":[{"title":"","description":""}],"budgetTips":[""],"timelineNotes":[""],"tips":[""]}',
-    'Rules: max 5 ideas, 4 vendorTasks, 4 budgetTips, 4 timelineNotes, 4 tips. Plain text only (no markdown, no HTML).',
+    'Rules: max 4 ideas, 3 vendorTasks, 3 budgetTips, 3 timelineNotes, 3 tips. Every description or tip under 25 words.',
+    'Plain text only (no markdown, no HTML).',
     'Totals, percentages and dates are already calculated by the app. Do not change or restate them; give advice only.',
     '',
     ...describeEvent(plan),
@@ -68,7 +69,7 @@ export function buildChatPrompt(plan, question) {
   const { budget, timeline } = plan;
   return [
     'You are an event-planning assistant answering one question about the plan below.',
-    'Answer in at most 120 words of plain text (no markdown, no HTML). Be practical and specific.',
+    'Answer in at most 90 words of plain text (no markdown, no HTML). Be practical and specific.',
     'The budget figures below were calculated by the app. If you reallocate money, show your arithmetic and keep the total consistent.',
     '',
     ...describeEvent(plan),

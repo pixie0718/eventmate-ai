@@ -13,5 +13,5 @@
     "strictNullChecks": true,
     "noImplicitAny": false
   },
-  "include": ["js/**/*.js", "server.js"]
+  "include": ["js/**/*.js", "api/**/*.js", "netlify/**/*.js", "scripts/**/*.js", "server.js"]
 }

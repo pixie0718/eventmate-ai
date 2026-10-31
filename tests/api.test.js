@@ -1,0 +1,104 @@
+// The framework-free API logic, the Netlify function wrapper and the static build script.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { handleApi, CSP, SECURITY_HEADERS } from '../api/handlers.js';
+import netlifyApi, { config } from '../netlify/functions/api.js';
+import { formatDate, addDays } from '../js/dates.js';
+
+const root = fileURLToPath(new URL('..', import.meta.url));
+const input = { type: 'wedding', name: 'A & B', date: formatDate(addDays(new Date(), 90)), guests: 100, budget: 500000, currency: 'INR', vibe: 'modern', prefs: [] };
+let seq = 0;
+const call = (pathname, body, extra = {}) => handleApi({
+  pathname, method: 'POST', client: `test-${++seq}`, readBody: async () => body, ...extra,
+});
+
+/** Runs fn with DEEPSEEK_API_KEY set (or removed) and fetch replaced, then restores both. */
+async function withEnv({ key = 'k', upstream } = {}, fn) {
+  const saved = { key: process.env.DEEPSEEK_API_KEY, fetch: globalThis.fetch };
+  if (key === null) delete process.env.DEEPSEEK_API_KEY; else process.env.DEEPSEEK_API_KEY = key;
+  if (upstream) globalThis.fetch = upstream;
+  try { return await fn(); } finally {
+    if (saved.key === undefined) delete process.env.DEEPSEEK_API_KEY; else process.env.DEEPSEEK_API_KEY = saved.key;
+    globalThis.fetch = saved.fetch;
+  }
+}
+const ok = (text) => async () => ({ ok: true, status: 200, json: async () => ({ choices: [{ message: { content: text } }] }) });
+
+test('/api/status reports the key without exposing it; unknown paths 404; wrong methods 405', async () => {
+  await withEnv({ key: null }, async () => assert.deepEqual((await handleApi({ pathname: '/api/status', method: 'GET' })).body, { ai: false }));
+  await withEnv({ key: 'secret-xyz' }, async () => {
+    const res = await handleApi({ pathname: '/api/status', method: 'GET' });
+    assert.deepEqual(res.body, { ai: true });
+    assert.ok(!JSON.stringify(res).includes('secret-xyz'));
+  });
+  assert.equal((await handleApi({ pathname: '/api/nope', method: 'GET' })).status, 404);
+  assert.equal((await handleApi({ pathname: '/api/chat', method: 'GET' })).status, 405);
+});
+
+test('AI endpoints: 503 without a key, 400 for bad input or body, 200 with the model text', async () => {
+  await withEnv({ key: null }, async () => assert.equal((await call('/api/chat', { input })).status, 503));
+  await withEnv({ upstream: ok('hello') }, async () => {
+    assert.equal((await call('/api/chat', { input: { ...input, guests: -5 } })).status, 400);
+    assert.equal((await call('/api/chat', null, { readBody: async () => { throw new Error('bad json'); } })).status, 400);
+    const res = await call('/api/personalize', { input, notes: 'vegan' });
+    assert.deepEqual(res, { status: 200, body: { text: 'hello' } });
+  });
+});
+
+test('AI endpoints: the server builds the prompt, caps tokens and rate-limits per client and endpoint', async () => {
+  let sent;
+  const upstream = async (url, opts) => { sent = JSON.parse(opts.body); return ok('x')(); };
+  await withEnv({ upstream }, async () => {
+    await call('/api/chat', { input, question: 'cut 10%?' }, { client: 'same' });
+    assert.match(sent.messages[0].content, /cut 10%\?/);
+    assert.ok(sent.max_tokens <= 450);
+    assert.equal((await call('/api/chat', { input }, { client: 'same' })).status, 429);
+    assert.equal((await call('/api/personalize', { input }, { client: 'same' })).status, 200, 'separate bucket per endpoint');
+    assert.ok(sent.max_tokens <= 700);
+  });
+});
+
+test('AI endpoints: upstream timeouts and errors become clean JSON errors', async () => {
+  const timeout = async () => { throw Object.assign(new Error('t'), { name: 'TimeoutError' }); };
+  const down = async () => { throw new Error('offline'); };
+  await withEnv({ upstream: timeout }, async () => assert.equal((await call('/api/chat', { input })).status, 504));
+  await withEnv({ upstream: down }, async () => assert.equal((await call('/api/chat', { input })).status, 502));
+  await withEnv({ upstream: async () => ({ ok: false, status: 429 }) }, async () => assert.equal((await call('/api/chat', { input })).status, 429));
+  await withEnv({ upstream: async () => ({ ok: false, status: 500 }) }, async () => assert.equal((await call('/api/chat', { input })).status, 502));
+});
+
+test('Netlify function: routes, security headers, no-store and a clean answer', async () => {
+  assert.deepEqual(config.path, ['/api/status', '/api/personalize', '/api/chat']);
+  await withEnv({ upstream: ok('from model') }, async () => {
+    const req = new Request('https://site.netlify.app/api/chat', { method: 'POST', body: JSON.stringify({ input, question: 'hi' }) });
+    const res = await netlifyApi(req, { ip: '203.0.113.9' });
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), { text: 'from model' });
+    assert.equal(res.headers.get('cache-control'), 'no-store');
+    assert.equal(res.headers.get('x-frame-options'), 'DENY');
+
+    const huge = new Request('https://site.netlify.app/api/chat', { method: 'POST', body: 'x'.repeat(20_000) });
+    assert.equal((await netlifyApi(huge, { ip: '203.0.113.10' })).status, 400);
+  });
+});
+
+test('netlify.toml publishes only dist/, wires the function and repeats the security headers', () => {
+  const toml = readFileSync(join(root, 'netlify.toml'), 'utf8');
+  assert.match(toml, /publish = "dist"/);
+  assert.match(toml, /functions = "netlify\/functions"/);
+  assert.ok(toml.includes(`Content-Security-Policy = "${CSP}"`), 'toml CSP must equal the server CSP');
+  for (const header of ['X-Frame-Options', 'X-Content-Type-Options', 'Referrer-Policy', 'Permissions-Policy']) assert.ok(toml.includes(header), header);
+  assert.ok(SECURITY_HEADERS['content-security-policy'].startsWith(readFileSync(join(root, 'index.html'), 'utf8').match(/Content-Security-Policy" content="([^"]+)"/)[1]));
+});
+
+test('build-static copies only the browser files into dist/', () => {
+  execFileSync('node', ['scripts/build-static.js'], { cwd: root });
+  assert.deepEqual(readdirSync(join(root, 'dist')).sort(), ['css', 'index.html', 'js']);
+  assert.ok(existsSync(join(root, 'dist/js/app.js')));
+  assert.ok(statSync(join(root, 'dist/index.html')).size > 1000);
+  for (const secret of ['.env', 'server.js', 'api', 'tests', 'netlify']) assert.equal(existsSync(join(root, 'dist', secret)), false, secret);
+});
