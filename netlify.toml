@@ -5,6 +5,9 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # DEEPSEEK_MODEL is just a model name (not a secret) and appears in docs/defaults, so skip it in the secrets scan.
+  # DEEPSEEK_API_KEY is still scanned and must never appear in the repo.
+  SECRETS_SCAN_OMIT_KEYS = "DEEPSEEK_MODEL"
 
 [functions]
   node_bundler = "esbuild"
