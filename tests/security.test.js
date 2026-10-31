@@ -8,13 +8,16 @@ import { join } from 'node:path';
 const root = join(fileURLToPath(import.meta.url), '..', '..');
 const read = (p) => readFileSync(join(root, p), 'utf8');
 const html = read('index.html');
+/** Every browser-side .js file, including subfolders. */
+const jsFiles = (dir = 'js') => readdirSync(join(root, dir), { withFileTypes: true })
+  .flatMap((e) => (e.isDirectory() ? jsFiles(`${dir}/${e.name}`) : e.name.endsWith('.js') ? [`${dir}/${e.name}`] : []));
 
 test('CSP forbids inline scripts, eval and third-party origins', () => {
   const csp = html.match(/Content-Security-Policy" content="([^"]+)"/)[1];
   assert.match(csp, /default-src 'none'/);
   assert.match(csp, /script-src 'self'(?!.*unsafe)/);
   assert.doesNotMatch(csp, /unsafe-inline|unsafe-eval/);
-  assert.match(csp, /connect-src https:\/\/api\.anthropic\.com(;|$)/);
+  assert.match(csp, /connect-src 'self'(;|$)/);
 });
 
 test('HTML has no inline scripts, inline handlers or inline styles', () => {
@@ -24,15 +27,14 @@ test('HTML has no inline scripts, inline handlers or inline styles', () => {
 });
 
 test('JS never uses dangerous sinks', () => {
-  for (const f of readdirSync(join(root, 'js'))) {
-    assert.doesNotMatch(read(`js/${f}`), /innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(|new Function/, f);
+  for (const f of jsFiles()) {
+    assert.doesNotMatch(read(f), /innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(|new Function/, f);
   }
 });
 
-test('the API key is never persisted', () => {
-  const app = read('js/app.js');
-  assert.doesNotMatch(app, /(localStorage|sessionStorage)[^;]*apiKey/);
-  assert.doesNotMatch(app, /save\([^)]*apiKey/);
+test('no API key or secret reaches the browser code', () => {
+  for (const f of jsFiles()) assert.doesNotMatch(read(f), /DEEPSEEK|sk-[a-z0-9]{10}|apiKey/i, f);
+  assert.doesNotMatch(html, /sk-[a-z0-9]{10}/i);
 });
 
 test('every form control has an accessible label and the page declares a language', () => {

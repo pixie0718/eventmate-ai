@@ -1,0 +1,42 @@
+// Milestone templates: [days before the event, title, detail, budget line].
+
+export const TIMELINES = {
+  wedding: { ideal: 365, items: [
+    [365, 'Set budget & guest estimate', 'Agree on who pays for what and the rough guest count.', 'misc'],
+    [330, 'Book the venue', 'Venue availability drives every other date.', 'venue'],
+    [300, 'Shortlist caterer & photographer', 'Taste tests and portfolio reviews.', 'catering'],
+    [240, 'Choose attire', 'Allow time for fittings and alterations.', 'attire'],
+    [180, 'Send save-the-dates', 'Especially for guests travelling from other cities.', 'misc'],
+    [120, 'Finalise menu & decor concept', 'Lock the theme, colours and menu.', 'decor'],
+    [90, 'Send invitations', 'Include RSVP date and venue directions.', 'misc'],
+    [60, 'Confirm vendor contracts', 'Get written quotes and payment schedules.', 'contingency'],
+    [30, 'Final headcount & seating', 'Share numbers with caterer and venue.', 'catering'],
+    [14, 'Reconfirm every vendor', 'Call each vendor and confirm arrival times.', 'contingency'],
+    [7, 'Clear final payments', 'Keep the envelopes/tips ready in advance.', 'contingency'],
+    [1, 'Rehearsal & emergency kit', 'Run the day order; pack safety pins, medicines, chargers.', 'misc'],
+    [0, 'Event day', 'Delegate a trusted person to handle vendors.', 'venue'],
+  ] },
+  birthday: { ideal: 60, items: [
+    [60, 'Set date, budget & guest list', 'Decide the theme and who to invite.', 'venue'],
+    [45, 'Book venue or plan home setup', 'Reserve early for weekends.', 'venue'],
+    [30, 'Send invitations', 'Digital invites are fine; add an RSVP date.', 'gifts'],
+    [21, 'Order cake & book entertainers', 'Confirm flavour, size and any allergies.', 'cake'],
+    [14, 'Plan menu & games', 'Match food to dietary needs of guests.', 'catering'],
+    [7, 'Buy decor & return gifts', 'Check balloon, banner and prop quantities.', 'decor'],
+    [3, 'Confirm RSVPs & vendors', 'Share final numbers with the caterer.', 'catering'],
+    [1, 'Set up & prep', 'Decorate, chill drinks, charge the speaker.', 'decor'],
+    [0, 'Party day', 'Assign a friend to take photos so you can enjoy it.', 'entertainment'],
+  ] },
+  community: { ideal: 90, items: [
+    [90, 'Define purpose & form a committee', 'Name a lead, treasurer and volunteer coordinator.', 'outreach'],
+    [75, 'Request permissions & permits', 'Local authority, society/RWA and noise permissions.', 'safety'],
+    [60, 'Book venue & recruit volunteers', 'Share clear role descriptions and shifts.', 'venue'],
+    [45, 'Start promotion & seek sponsors', 'Posters, WhatsApp groups, local pages.', 'outreach'],
+    [30, 'Book sound, food & first aid', 'Get written quotes from at least two vendors.', 'av'],
+    [21, 'Publish the programme', 'Share the schedule and accessibility details.', 'program'],
+    [14, 'Volunteer briefing #1', 'Walk through roles and emergency contacts.', 'supplies'],
+    [7, 'Confirm all suppliers', 'Deliveries, power, seating, signage.', 'contingency'],
+    [2, 'Set up & safety walk-through', 'Check exits, wiring and first-aid kit.', 'safety'],
+    [0, 'Event day', 'Run a short volunteer huddle at opening.', 'venue'],
+  ] },
+};

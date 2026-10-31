@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://api.anthropic.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="EventMate AI plans weddings, birthdays and community events: budget split, timeline, vendor checklist and personalised ideas. Runs fully in your browser.">
+  <meta name="description" content="EventMate AI plans weddings, birthdays and community events: budget split, timeline, vendor checklist and personalised ideas.">
   <title>EventMate AI</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%8E%89%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
@@ -16,13 +16,14 @@
   <header class="hero">
     <div class="wrap">
       <p class="eyebrow">Weddings · Birthdays · Community events</p>
-      <h1><span class="logo" aria-hidden="true">🎉</span> EventMate AI</h1>
-      <p class="tagline">Plan your event in seconds: budget, timeline, vendors and ideas, all in one place.</p>
-      <ul class="pills" aria-label="Highlights">
-        <li>Works offline</li>
-        <li>No sign-up</li>
-        <li>Your data stays in your browser</li>
+      <h1><span class="logo" aria-hidden="true">✦</span> EventMate AI</h1>
+      <p class="tagline">Your AI planning partner for weddings, birthdays and community events: a budget, a dated timeline, a vendor checklist and ideas made for your day.</p>
+      <ul class="event-types" aria-label="Choose an event type to start">
+        <li><button type="button" class="event-type" data-type="wedding"><span aria-hidden="true">💍</span><strong>Wedding</strong><small>Venue, catering, rituals</small></button></li>
+        <li><button type="button" class="event-type" data-type="birthday"><span aria-hidden="true">🎂</span><strong>Birthday</strong><small>Cake, games, party</small></button></li>
+        <li><button type="button" class="event-type" data-type="community"><span aria-hidden="true">🤝</span><strong>Community</strong><small>Volunteers, permits, outreach</small></button></li>
       </ul>
+      <a class="hero-cta" href="#form-heading">Plan my event</a>
     </div>
   </header>
 
@@ -97,6 +98,12 @@
           <label class="check"><input type="checkbox" name="prefs" value="tech"> Tech / live-stream</label>
         </fieldset>
 
+        <div class="field">
+          <label for="ai-notes">Anything special? <span class="hint">(optional, max 500 characters; the AI uses it to personalise your plan)</span></label>
+          <textarea id="ai-notes" maxlength="500" rows="3" placeholder="e.g. vegan menu, hill-station venue, grandparents travelling"></textarea>
+        </div>
+        <p id="ai-state" class="ai-state" role="status"></p>
+
         <button type="submit" class="primary">Create my plan</button>
       </form>
     </section>
@@ -122,7 +129,7 @@
         <h3 id="budget-heading">Budget split</h3>
         <div class="budget-grid">
         <div id="donut"></div>
-        <div class="table-wrap" tabindex="0" role="region" aria-labelledby="budget-heading">
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Budget table">
         <table>
           <caption class="sr-only">Budget allocation by category</caption>
           <thead><tr><th scope="col">Category</th><th scope="col">Share</th><th scope="col" class="num">Amount</th><th scope="col"><span class="sr-only">Chart</span></th></tr></thead>
@@ -132,16 +139,19 @@
         </div>
         </div>
         <p id="catering-note" class="meta"></p>
+        <div class="ai-box" id="ai-budget" hidden></div>
       </section>
 
       <section class="card" aria-labelledby="timeline-heading">
         <h3 id="timeline-heading">Timeline</h3>
         <ol class="timeline" id="timeline-list"></ol>
+        <div class="ai-box" id="ai-timeline" hidden></div>
       </section>
 
       <section class="card" aria-labelledby="vendor-heading">
         <h3 id="vendor-heading">Vendor checklist</h3>
         <ul class="checklist" id="vendor-list"></ul>
+        <div class="ai-box" id="ai-vendors" hidden></div>
       </section>
 
       <section class="card" aria-labelledby="ideas-heading">
@@ -150,19 +160,26 @@
       </section>
 
       <section class="card" aria-labelledby="ai-heading">
-        <h3 id="ai-heading">Want more ideas from Claude? <span class="hint">(optional)</span></h3>
-        <p class="meta">Everything above works offline. This extra step sends your event details (not your key anywhere else) straight from your browser to Anthropic using your own API key. The key stays in memory and is gone when you close or reload the tab. Use a key with a spending limit.</p>
-        <div class="field">
-          <label for="api-key">Anthropic API key</label>
-          <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…">
-        </div>
-        <div class="field">
-          <label for="ai-notes">Anything special? <span class="hint">(optional, max 500 characters)</span></label>
-          <textarea id="ai-notes" maxlength="500" rows="3"></textarea>
-        </div>
-        <button type="button" id="ai-button">Get AI ideas</button>
+        <h3 id="ai-heading">AI assistant</h3>
+        <p class="meta">The app calculates every number and date. The AI only adds suggestions on top and can answer questions about your plan. If it is unavailable, your plan above is still complete.</p>
+        <button type="button" id="ai-button">Personalise my plan with AI</button>
         <p id="ai-status" role="status" aria-live="polite"></p>
         <ul class="ideas" id="ai-results"></ul>
+
+        <div class="chat-panel">
+          <h4 id="chat-heading">Ask about your plan</h4>
+          <ul class="chips" aria-label="Suggested questions">
+            <li><button type="button" class="chip" data-question="What should I cut if my budget drops 10%?">Budget drops 10%</button></li>
+            <li><button type="button" class="chip" data-question="What should I book first, and why?">What to book first</button></li>
+            <li><button type="button" class="chip" data-question="What could go wrong with this plan, and how do I prepare?">Biggest risks</button></li>
+          </ul>
+          <ul class="chat-log" id="chat-log" aria-live="polite" aria-labelledby="chat-heading"></ul>
+          <form id="chat-form" class="chat-form" novalidate>
+            <label for="chat-input" class="sr-only">Your question</label>
+            <input id="chat-input" type="text" maxlength="300" autocomplete="off" placeholder="Type your own question…">
+            <button type="submit" id="chat-button" class="primary">Ask</button>
+          </form>
+        </div>
       </section>
     </div>
   </main>

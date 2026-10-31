@@ -1,12 +1,16 @@
 // Input validation + sanitising. Pure functions, no DOM, so they are unit-testable.
+import { startOfDay } from './dates.js';
 
 export const EVENT_TYPES = ['wedding', 'birthday', 'community'];
 export const VIBES = ['traditional', 'modern', 'rustic', 'fun', 'elegant'];
 export const PREFS = ['outdoor', 'kids', 'elders', 'vegetarian', 'lowkey', 'tech'];
 export const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP'];
 
-const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+// Control characters except tab, newline and carriage return.
+// eslint-disable-next-line no-control-regex -- matching control characters is the whole point
+export const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 
+/** Strips control characters, collapses spaces and caps the length. @param {unknown} value @param {number} max @returns {string} */
 export function sanitizeText(value, max) {
   return String(value ?? '')
     .replace(CONTROL_CHARS, '')
@@ -22,17 +26,15 @@ function isIsoDate(s) {
   return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
 }
 
-function startOfDay(d) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
 /**
- * @param {object} raw  untrusted form values
+ * @param {Record<string, any>} raw  untrusted form values
+ * @returns {{ ok: boolean, errors: Record<string, string>, value: import('./types.js').EventInput }}
  * @param {Date} today  injected so tests are deterministic
- * @returns {{ok: boolean, errors: Record<string,string>, value: object}}
  */
 export function validateInput(raw, today = new Date()) {
+  /** @type {Record<string, string>} */
   const errors = {};
+  /** @type {any} */
   const value = {};
 
   value.type = String(raw.type ?? '');

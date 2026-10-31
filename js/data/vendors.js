@@ -1,0 +1,35 @@
+// [name, category, priority, ideal lead days, note]
+export const VENDORS = {
+  wedding: [
+    ['Venue / banquet', 'venue', 'must', 330, 'Ask about overtime, power backup and cancellation terms.'],
+    ['Caterer', 'catering', 'must', 300, 'Book a tasting and confirm per-plate pricing.'],
+    ['Photographer & videographer', 'photography', 'must', 300, 'Review full albums, not just highlights.'],
+    ['Officiant / priest', 'misc', 'must', 180, 'Confirm muhurat or ceremony timings.'],
+    ['Attire & tailor', 'attire', 'must', 240, 'Schedule at least two fittings.'],
+    ['Decorator / florist', 'decor', 'should', 180, 'Share a mood board and venue photos.'],
+    ['Makeup & hair', 'attire', 'should', 120, 'Do a trial run.'],
+    ['DJ / band', 'entertainment', 'should', 180, 'Provide a do-play and do-not-play list.'],
+    ['Invitation printer', 'misc', 'should', 90, 'Proof-read names and dates twice.'],
+    ['Guest transport', 'misc', 'nice', 60, 'Useful for out-of-town guests.'],
+  ],
+  birthday: [
+    ['Venue / hall (if not at home)', 'venue', 'should', 30, 'Check capacity and end time.'],
+    ['Cake baker', 'cake', 'must', 21, 'Confirm allergens and delivery slot.'],
+    ['Caterer / food order', 'catering', 'must', 21, 'Count vegetarian, vegan and allergy needs.'],
+    ['Decorator', 'decor', 'should', 21, 'Share theme and colours.'],
+    ['Host / entertainer', 'entertainment', 'nice', 21, 'Match the act to the age group.'],
+    ['Photographer', 'entertainment', 'nice', 14, 'A friend with a good phone also works.'],
+    ['Return gifts', 'gifts', 'nice', 10, 'Order a few extra.'],
+  ],
+  community: [
+    ['Venue / ground permission', 'venue', 'must', 75, 'Get approval in writing.'],
+    ['Local permits / NOC', 'safety', 'must', 75, 'Check noise, fire and gathering rules.'],
+    ['Volunteer coordinator', 'supplies', 'must', 60, 'One person owns the roster.'],
+    ['Sound & lighting', 'av', 'must', 45, 'Test mics on the day before.'],
+    ['First aid & safety marshals', 'safety', 'must', 30, 'Keep a first-aid kit and emergency numbers handy.'],
+    ['Refreshments / caterer', 'catering', 'should', 30, 'Plan for dietary needs and waste bins.'],
+    ['Banners & printing', 'outreach', 'should', 30, 'Include date, time and accessibility info.'],
+    ['Sponsors / local businesses', 'outreach', 'nice', 45, 'Offer visible thanks on signage.'],
+    ['Clean-up crew', 'supplies', 'should', 14, 'Agree on waste segregation.'],
+  ],
+};
