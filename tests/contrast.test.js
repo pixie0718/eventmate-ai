@@ -7,13 +7,16 @@ const css = readFileSync(new URL('../css/styles.css', import.meta.url), 'utf8');
 const AA = 4.5;
 
 /** Reads `--token: #hex` declarations out of a CSS block. */
-const tokens = (block) => Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})\b/g)].map((m) => [m[1], m[2]]));
+const tokens = (block) =>
+  Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})\b/g)].map((m) => [m[1], m[2]]));
 const light = tokens(css.match(/:root \{([^}]*)\}/)[1]);
 const dark = { ...light, ...tokens(css.match(/prefers-color-scheme: dark\) \{\s*:root \{([^}]*)\}/)[1]) };
-const gradientStops = (name, block) => [...block.match(new RegExp(`--${name}:[^;]*`))[0].matchAll(/#[0-9a-fA-F]{6}/g)].map((m) => m[0]);
+const gradientStops = (name, block) =>
+  [...block.match(new RegExp(`--${name}:[^;]*`))[0].matchAll(/#[0-9a-fA-F]{6}/g)].map((m) => m[0]);
 
 function luminance(hex) {
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+  const [r, g, b] = [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
     .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
@@ -21,7 +24,8 @@ function ratio(a, b) {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
-const check = (label, fg, bg) => assert.ok(ratio(fg, bg) >= AA, `${label}: ${fg} on ${bg} is ${ratio(fg, bg).toFixed(2)}:1 (needs ${AA}:1)`);
+const check = (label, fg, bg) =>
+  assert.ok(ratio(fg, bg) >= AA, `${label}: ${fg} on ${bg} is ${ratio(fg, bg).toFixed(2)}:1 (needs ${AA}:1)`);
 
 for (const [mode, t, block] of [
   ['light', light, css.match(/:root \{([^}]*)\}/)[1]],

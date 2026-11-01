@@ -6,8 +6,15 @@ import { JSDOM } from 'jsdom';
 import { formatDate, addDays } from '../js/dates.js';
 
 const SAVED = {
-  type: 'birthday', name: 'Restored party', date: formatDate(addDays(new Date(), 40)),
-  guests: 30, budget: 60000, currency: 'INR', city: 'Goa', vibe: 'fun', prefs: ['kids'],
+  type: 'birthday',
+  name: 'Restored party',
+  date: formatDate(addDays(new Date(), 40)),
+  guests: 30,
+  budget: 60000,
+  currency: 'INR',
+  city: 'Goa',
+  vibe: 'fun',
+  prefs: ['kids'],
 };
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -16,8 +23,12 @@ const { document } = window;
 window.Element.prototype.scrollIntoView = () => {};
 window.matchMedia = () => ({ matches: false });
 Object.assign(globalThis, {
-  window, document, localStorage: window.localStorage, FormData: window.FormData,
-  matchMedia: window.matchMedia, HTMLElement: window.HTMLElement,
+  window,
+  document,
+  localStorage: window.localStorage,
+  FormData: window.FormData,
+  matchMedia: window.matchMedia,
+  HTMLElement: window.HTMLElement,
 });
 globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => ({ ai: false }) });
 

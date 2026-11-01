@@ -71,7 +71,10 @@ export async function runAiPlan(plan) {
       ...ai.ideas.map((i) => el('li', {}, el('strong', { text: i.title }), el('p', { text: i.description }))),
       ...ai.tips.map((t) => el('li', { class: 'tip' }, el('p', { text: `Tip: ${t}` }))),
     );
-    setStatus('Done. AI suggestions were added to each section. Figures come from the plan; review AI advice before relying on it.');
+    setStatus(
+      'Done. AI suggestions were added to each section. ' +
+        'Figures come from the plan; review AI advice before relying on it.',
+    );
   } catch (err) {
     setStatus(`${errorMessage(err)} Your plan above is complete without it.`, true);
   } finally {

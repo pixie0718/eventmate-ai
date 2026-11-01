@@ -7,14 +7,32 @@ import { join } from 'node:path';
 import { createApp, loadEnv } from '../server.js';
 import { formatDate, addDays } from '../js/dates.js';
 
-const input = { type: 'wedding', name: 'A & B', date: formatDate(addDays(new Date(), 90)), guests: 100, budget: 500000, currency: 'INR', vibe: 'modern', prefs: [] };
+const input = {
+  type: 'wedding',
+  name: 'A & B',
+  date: formatDate(addDays(new Date(), 90)),
+  guests: 100,
+  budget: 500000,
+  currency: 'INR',
+  vibe: 'modern',
+  prefs: [],
+};
 
 async function withServer(fn) {
   const server = createApp().listen(0);
   await new Promise((r) => server.once('listening', r));
-  try { await fn(`http://127.0.0.1:${server.address().port}`); } finally { server.close(); }
+  try {
+    await fn(`http://127.0.0.1:${server.address().port}`);
+  } finally {
+    server.close();
+  }
 }
-const post = (base, body, path = '/api/personalize') => fetch(`${base}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+const post = (base, body, path = '/api/personalize') =>
+  fetch(`${base}${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 
 test('serves the app but not secrets or server code', async () => {
   await withServer(async (base) => {
@@ -64,7 +82,8 @@ test('/api/personalize is disabled without a key, validates input and proxies wi
     });
   } finally {
     globalThis.fetch = realFetch;
-    if (saved === undefined) delete process.env.DEEPSEEK_API_KEY; else process.env.DEEPSEEK_API_KEY = saved;
+    if (saved === undefined) delete process.env.DEEPSEEK_API_KEY;
+    else process.env.DEEPSEEK_API_KEY = saved;
   }
 });
 
@@ -80,7 +99,8 @@ test('/api/status reports whether an AI key is configured, without exposing it',
       assert.ok(!text.includes('secret-123'));
     });
   } finally {
-    if (saved === undefined) delete process.env.DEEPSEEK_API_KEY; else process.env.DEEPSEEK_API_KEY = saved;
+    if (saved === undefined) delete process.env.DEEPSEEK_API_KEY;
+    else process.env.DEEPSEEK_API_KEY = saved;
   }
 });
 
@@ -93,7 +113,10 @@ test('every response carries the security headers, and the header CSP matches th
       assert.equal(res.headers.get('x-frame-options'), 'DENY', path);
       assert.equal(res.headers.get('x-content-type-options'), 'nosniff', path);
       assert.equal(res.headers.get('referrer-policy'), 'no-referrer', path);
-      assert.ok(res.headers.get('content-security-policy').startsWith(meta), `${path}: header CSP must extend the meta CSP`);
+      assert.ok(
+        res.headers.get('content-security-policy').startsWith(meta),
+        `${path}: header CSP must extend the meta CSP`,
+      );
       assert.match(res.headers.get('content-security-policy'), /frame-ancestors 'none'/);
     }
     assert.equal((await fetch(`${base}/api/status`)).headers.get('cache-control'), 'no-store');
@@ -110,7 +133,9 @@ test('static files support ETag revalidation (304) and gzip', async () => {
     assert.equal(again.status, 304);
 
     const raw = await new Promise((resolve, reject) => {
-      http.get(`${base}/js/app.js`, { headers: { 'accept-encoding': 'gzip' } }, (res) => resolve(res)).on('error', reject);
+      http
+        .get(`${base}/js/app.js`, { headers: { 'accept-encoding': 'gzip' } }, (res) => resolve(res))
+        .on('error', reject);
     });
     assert.equal(raw.headers['content-encoding'], 'gzip');
     raw.resume();
@@ -119,7 +144,11 @@ test('static files support ETag revalidation (304) and gzip', async () => {
 
 test('POST bodies must be JSON, so other sites cannot spend the AI quota with a plain form post', async () => {
   await withServer(async (base) => {
-    const form = await fetch(`${base}/api/chat`, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'a=1' });
+    const form = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: 'a=1',
+    });
     assert.equal(form.status, 415);
     const none = await fetch(`${base}/api/chat`, { method: 'POST', body: JSON.stringify({ input }) });
     assert.equal(none.status, 415, 'no content type');
@@ -131,21 +160,33 @@ test('a rate-limited call says how many seconds to wait', async () => {
   process.env.DEEPSEEK_API_KEY = 'test-key';
   try {
     await withServer(async (base) => {
-      await post(base, { input: { ...input, guests: -1 } }, '/api/chat'); // starts (or continues) the cooldown, then fails validation
+      // Starts (or continues) the cooldown, then fails validation.
+      await post(base, { input: { ...input, guests: -1 } }, '/api/chat');
       const limited = await post(base, { input }, '/api/chat');
       assert.equal(limited.status, 429);
       assert.equal(limited.headers.get('retry-after'), '3');
       assert.equal(limited.headers.get('cache-control'), 'no-store');
     });
   } finally {
-    if (saved === undefined) delete process.env.DEEPSEEK_API_KEY; else process.env.DEEPSEEK_API_KEY = saved;
+    if (saved === undefined) delete process.env.DEEPSEEK_API_KEY;
+    else process.env.DEEPSEEK_API_KEY = saved;
   }
 });
 
 test('loadEnv reads KEY=value lines, strips quotes and never overrides real environment variables', () => {
   const dir = mkdtempSync(join(tmpdir(), 'eventmate-env-'));
   const file = join(dir, '.env');
-  writeFileSync(file, ['# comment', 'EM_TEST_PLAIN=abc', 'EM_TEST_QUOTED="with space"', "EM_TEST_SINGLE='x'", 'EM_TEST_KEEP=from-file', 'not a line'].join('\n'));
+  writeFileSync(
+    file,
+    [
+      '# comment',
+      'EM_TEST_PLAIN=abc',
+      'EM_TEST_QUOTED="with space"',
+      "EM_TEST_SINGLE='x'",
+      'EM_TEST_KEEP=from-file',
+      'not a line',
+    ].join('\n'),
+  );
   process.env.EM_TEST_KEEP = 'from-environment';
   try {
     loadEnv(file);
@@ -163,9 +204,15 @@ test('loadEnv reads KEY=value lines, strips quotes and never overrides real envi
 test('a request with an unparseable URL gets a 400 and the server keeps running', async () => {
   await withServer(async (base) => {
     const { port } = new URL(base);
-    const raw = (path) => new Promise((resolve, reject) => {
-      http.get({ host: '127.0.0.1', port, path }, (res) => { res.resume(); res.on('end', () => resolve(res.statusCode)); }).on('error', reject);
-    });
+    const raw = (path) =>
+      new Promise((resolve, reject) => {
+        http
+          .get({ host: '127.0.0.1', port, path }, (res) => {
+            res.resume();
+            res.on('end', () => resolve(res.statusCode));
+          })
+          .on('error', reject);
+      });
     assert.equal(await raw('//'), 400);
     assert.equal(await raw('//'), 400, 'and again: the first one did not break anything');
     assert.equal((await fetch(`${base}/`)).status, 200, 'still serving after the bad requests');
@@ -175,7 +222,9 @@ test('a request with an unparseable URL gets a 400 and the server keeps running'
 test('an unexpected failure while handling a request becomes a 500, not a crash', async () => {
   await withServer(async (base) => {
     const realNow = Date.now;
-    Date.now = () => { throw new Error('boom'); }; // handleApi reads the clock for the cooldown
+    Date.now = () => {
+      throw new Error('boom');
+    }; // handleApi reads the clock for the cooldown
     const saved = process.env.DEEPSEEK_API_KEY;
     process.env.DEEPSEEK_API_KEY = 'k';
     try {
@@ -183,7 +232,8 @@ test('an unexpected failure while handling a request becomes a 500, not a crash'
       assert.equal(res.status, 500);
     } finally {
       Date.now = realNow;
-      if (saved === undefined) delete process.env.DEEPSEEK_API_KEY; else process.env.DEEPSEEK_API_KEY = saved;
+      if (saved === undefined) delete process.env.DEEPSEEK_API_KEY;
+      else process.env.DEEPSEEK_API_KEY = saved;
     }
     assert.equal((await fetch(`${base}/`)).status, 200);
   });

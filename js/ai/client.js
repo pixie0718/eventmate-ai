@@ -19,7 +19,10 @@ async function post(url, payload, { fetchImpl = fetch, timeoutMs = DEFAULT_TIMEO
       body: JSON.stringify(payload),
     });
   } catch (err) {
-    const message = err instanceof Error && err.name === 'AbortError' ? 'The AI request timed out.' : 'Could not reach the AI service.';
+    const message =
+      err instanceof Error && err.name === 'AbortError'
+        ? 'The AI request timed out.'
+        : 'Could not reach the AI service.';
     throw new Error(message, { cause: err });
   } finally {
     clearTimeout(timer);
@@ -33,13 +36,21 @@ async function post(url, payload, { fetchImpl = fetch, timeoutMs = DEFAULT_TIMEO
 
 /** @returns {Promise<import('../types.js').AiPlan>} */
 export async function requestAiPlan({ plan, notes, ...options }) {
-  const text = await post(API.personalize, { input: plan.input, notes: String(notes ?? '').slice(0, MAX_NOTES) }, options);
+  const text = await post(
+    API.personalize,
+    { input: plan.input, notes: String(notes ?? '').slice(0, MAX_NOTES) },
+    options,
+  );
   return parseAiResponse(text);
 }
 
 /** @returns {Promise<string>} */
 export async function requestAiChat({ plan, question, ...options }) {
-  const text = await post(API.chat, { input: plan.input, question: String(question ?? '').slice(0, MAX_QUESTION) }, options);
+  const text = await post(
+    API.chat,
+    { input: plan.input, question: String(question ?? '').slice(0, MAX_QUESTION) },
+    options,
+  );
   return parseChatReply(text);
 }
 

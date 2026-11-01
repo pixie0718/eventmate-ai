@@ -3,7 +3,17 @@ import assert from 'node:assert/strict';
 import { validateInput, sanitizeText } from '../js/validate.js';
 
 const TODAY = new Date(2026, 5, 15);
-const good = { type: 'birthday', name: 'Riya', date: '2026-07-01', guests: '40', budget: '50000', currency: 'INR', city: 'Delhi', vibe: 'fun', prefs: ['kids'] };
+const good = {
+  type: 'birthday',
+  name: 'Riya',
+  date: '2026-07-01',
+  guests: '40',
+  budget: '50000',
+  currency: 'INR',
+  city: 'Delhi',
+  vibe: 'fun',
+  prefs: ['kids'],
+};
 
 test('accepts valid input and normalises numbers', () => {
   const r = validateInput(good, TODAY);
@@ -24,8 +34,10 @@ test('rejects impossible and far-future dates', () => {
 });
 
 test('rejects bad numbers', () => {
-  for (const guests of ['0', '-5', '1.5', 'abc', '5001', '']) assert.ok(validateInput({ ...good, guests }, TODAY).errors.guests, guests);
-  for (const budget of ['0', '-1', '2.5', 'NaN', '1e12', '']) assert.ok(validateInput({ ...good, budget }, TODAY).errors.budget, budget);
+  for (const guests of ['0', '-5', '1.5', 'abc', '5001', ''])
+    assert.ok(validateInput({ ...good, guests }, TODAY).errors.guests, guests);
+  for (const budget of ['0', '-1', '2.5', 'NaN', '1e12', ''])
+    assert.ok(validateInput({ ...good, budget }, TODAY).errors.budget, budget);
 });
 
 test('rejects unknown enum values', () => {

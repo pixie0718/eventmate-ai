@@ -14,9 +14,11 @@ export function readForm() {
 export function writeForm(values) {
   const form = $form('planner-form');
   for (const key of FIELDS) {
-    if (values[key] !== undefined && form.elements[key]) /** @type {HTMLInputElement} */ (form.elements[key]).value = values[key];
+    if (values[key] !== undefined && form.elements[key])
+      /** @type {HTMLInputElement} */ (form.elements[key]).value = values[key];
   }
-  for (const box of /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[name="prefs"]'))) box.checked = (values.prefs ?? []).includes(box.value);
+  for (const box of /** @type {NodeListOf<HTMLInputElement>} */ (form.querySelectorAll('input[name="prefs"]')))
+    box.checked = (values.prefs ?? []).includes(box.value);
 }
 
 /** Shows each error next to its field (aria-invalid + role=alert text) and focuses the first bad one. */
@@ -27,7 +29,8 @@ export function showErrors(errors) {
     const out = $(`err-${name}`);
     if (!field || !out) continue;
     out.textContent = errors[name] ?? '';
-    if (errors[name]) field.setAttribute('aria-invalid', 'true'); else field.removeAttribute('aria-invalid');
+    if (errors[name]) field.setAttribute('aria-invalid', 'true');
+    else field.removeAttribute('aria-invalid');
   }
   const first = Object.keys(errors)[0];
   if (first) /** @type {HTMLElement | undefined} */ (form.elements[first])?.focus();

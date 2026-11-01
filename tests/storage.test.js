@@ -6,13 +6,24 @@ import { load, save } from '../js/ui/storage.js';
 const withStorage = (stub, fn) => {
   const saved = globalThis.localStorage;
   Object.defineProperty(globalThis, 'localStorage', { value: stub, configurable: true });
-  try { return fn(); } finally { Object.defineProperty(globalThis, 'localStorage', { value: saved, configurable: true }); }
+  try {
+    return fn();
+  } finally {
+    Object.defineProperty(globalThis, 'localStorage', { value: saved, configurable: true });
+  }
 };
 const memory = () => {
   const data = new Map();
   return { getItem: (k) => data.get(k) ?? null, setItem: (k, v) => data.set(k, String(v)) };
 };
-const blocked = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); } };
+const blocked = {
+  getItem() {
+    throw new Error('blocked');
+  },
+  setItem() {
+    throw new Error('blocked');
+  },
+};
 
 test('save then load round-trips the state', () => {
   withStorage(memory(), () => {

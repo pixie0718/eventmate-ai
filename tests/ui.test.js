@@ -15,13 +15,20 @@ const { document } = window;
 window.Element.prototype.scrollIntoView = () => {};
 window.matchMedia = () => ({ matches: false });
 Object.assign(globalThis, {
-  window, document, localStorage: window.localStorage, FormData: window.FormData,
-  matchMedia: window.matchMedia, HTMLElement: window.HTMLElement,
+  window,
+  document,
+  localStorage: window.localStorage,
+  FormData: window.FormData,
+  matchMedia: window.matchMedia,
+  HTMLElement: window.HTMLElement,
 });
 
 const AI_PLAN = {
-  ideas: [{ title: 'Lantern walk', description: 'Light the path.' }], vendorTasks: [{ title: 'Tent check', description: 'Confirm windproofing.' }],
-  budgetTips: ['Keep the buffer.'], timelineNotes: ['Book early.'], tips: ['Breathe.'],
+  ideas: [{ title: 'Lantern walk', description: 'Light the path.' }],
+  vendorTasks: [{ title: 'Tent check', description: 'Confirm windproofing.' }],
+  budgetTips: ['Keep the buffer.'],
+  timelineNotes: ['Book early.'],
+  tips: ['Breathe.'],
 };
 const ai = { on: true, chatAnswer: 'Trim decor first.', fail: false };
 globalThis.fetch = async (url) => {
@@ -36,17 +43,34 @@ globalThis.fetch = async (url) => {
 let clock = Date.now();
 const realNow = Date.now;
 Date.now = () => clock;
-const advance = (ms = 5000) => { clock += ms; };
+const advance = (ms = 5000) => {
+  clock += ms;
+};
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
-test.after(() => { Date.now = realNow; });
+test.after(() => {
+  Date.now = realNow;
+});
 
 const $ = (id) => document.getElementById(id);
 const form = () => $('planner-form');
 function fillForm(overrides = {}) {
-  const values = { type: 'wedding', name: 'Asha & Ravi', date: formatDate(addDays(new Date(), 90)), guests: '120', budget: '800000', currency: 'INR', city: 'Pune', vibe: 'modern', ...overrides };
+  const values = {
+    type: 'wedding',
+    name: 'Asha & Ravi',
+    date: formatDate(addDays(new Date(), 90)),
+    guests: '120',
+    budget: '800000',
+    currency: 'INR',
+    city: 'Pune',
+    vibe: 'modern',
+    ...overrides,
+  };
   for (const [key, value] of Object.entries(values)) form().elements[key].value = value;
 }
-const submit = async () => { form().dispatchEvent(new window.Event('submit', { cancelable: true, bubbles: true })); await settle(); };
+const submit = async () => {
+  form().dispatchEvent(new window.Event('submit', { cancelable: true, bubbles: true }));
+  await settle();
+};
 
 await import('../js/app.js');
 await settle();
@@ -155,10 +179,17 @@ test('download saves the plan as a JSON file and print opens the print dialog', 
   let blob;
   let link;
   let printed = false;
-  URL.createObjectURL = (b) => { blob = b; return 'blob:test'; };
+  URL.createObjectURL = (b) => {
+    blob = b;
+    return 'blob:test';
+  };
   URL.revokeObjectURL = () => {};
-  window.HTMLAnchorElement.prototype.click = function click() { link = this; };
-  window.print = () => { printed = true; };
+  window.HTMLAnchorElement.prototype.click = function click() {
+    link = this;
+  };
+  window.print = () => {
+    printed = true;
+  };
   try {
     $('download-button').click();
     assert.equal(link.download, 'eventmate-plan.json');

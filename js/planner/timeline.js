@@ -19,7 +19,10 @@ export function buildTimeline(input, today) {
 
   const milestones = items
     .map(([days, title, detail], i) => ({
-      id: `t${days}-${i}`, title, detail, daysBefore: days,
+      id: `t${days}-${i}`,
+      title,
+      detail,
+      daysBefore: days,
       date: formatDate(addDays(event, -Math.round(days * factor))),
     }))
     .sort((a, b) => a.date.localeCompare(b.date) || b.daysBefore - a.daysBefore);

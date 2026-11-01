@@ -12,7 +12,16 @@ const MAX_TOKENS = { personalize: 700, chat: 450 };
 const lastCall = new Map();
 
 // Same policy as the <meta> tag in index.html, plus the directives a meta tag cannot carry.
-export const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+export const CSP = [
+  "default-src 'none'",
+  "script-src 'self'",
+  "style-src 'self'",
+  "img-src 'self' data:",
+  "connect-src 'self'",
+  "base-uri 'none'",
+  "form-action 'none'",
+  "frame-ancestors 'none'",
+].join('; ');
 export const SECURITY_HEADERS = {
   'content-security-policy': CSP,
   'x-content-type-options': 'nosniff',
@@ -77,10 +86,15 @@ export async function handleApi({ pathname, method, readBody, client, contentTyp
   // A JSON content type cannot be sent by a plain cross-site form, so other sites cannot spend our AI quota.
   if (!isJson(contentType)) return reply(415, { error: 'content type must be application/json' });
   if (!process.env.DEEPSEEK_API_KEY) return reply(503, { error: 'not configured' });
-  if (isCoolingDown(`${client}${pathname}`)) return reply(429, { error: 'rate limited' }, { 'retry-after': RETRY_AFTER_SECONDS });
+  if (isCoolingDown(`${client}${pathname}`))
+    return reply(429, { error: 'rate limited' }, { 'retry-after': RETRY_AFTER_SECONDS });
 
   let body;
-  try { body = await readBody(); } catch { return reply(400, { error: 'bad request' }); }
+  try {
+    body = await readBody();
+  } catch {
+    return reply(400, { error: 'bad request' });
+  }
   const { ok, value } = validateInput(body?.input ?? {});
   if (!ok) return reply(400, { error: 'invalid input' });
 

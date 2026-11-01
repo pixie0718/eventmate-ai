@@ -9,8 +9,10 @@ const root = join(fileURLToPath(import.meta.url), '..', '..');
 const read = (p) => readFileSync(join(root, p), 'utf8');
 const html = read('index.html');
 /** Every browser-side .js file, including subfolders. */
-const jsFiles = (dir = 'js') => readdirSync(join(root, dir), { withFileTypes: true })
-  .flatMap((e) => (e.isDirectory() ? jsFiles(`${dir}/${e.name}`) : e.name.endsWith('.js') ? [`${dir}/${e.name}`] : []));
+const jsFiles = (dir = 'js') =>
+  readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? jsFiles(`${dir}/${e.name}`) : e.name.endsWith('.js') ? [`${dir}/${e.name}`] : [],
+  );
 
 test('CSP forbids inline scripts, eval and third-party origins', () => {
   const csp = html.match(/Content-Security-Policy" content="([^"]+)"/)[1];

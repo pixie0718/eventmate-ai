@@ -5,22 +5,46 @@ import { allocate } from '../js/planner/budget.js';
 import { daysBetween, parseDate } from '../js/dates.js';
 
 const TODAY = new Date(2026, 0, 1);
-const base = { type: 'wedding', name: 'A & B', date: '2027-01-01', guests: 200, budget: 1_000_000, currency: 'INR', city: 'Pune', vibe: 'traditional', prefs: [] };
+const base = {
+  type: 'wedding',
+  name: 'A & B',
+  date: '2027-01-01',
+  guests: 200,
+  budget: 1_000_000,
+  currency: 'INR',
+  city: 'Pune',
+  vibe: 'traditional',
+  prefs: [],
+};
 const plan = (over = {}, today = TODAY) => buildPlan({ ...base, ...over }, today);
 
 test('allocate always sums to the exact total', () => {
   for (const total of [1, 7, 999, 100_001, 1_000_000_007]) {
     const out = allocate(total, { a: 22, b: 28, c: 10, d: 10, e: 10, f: 6, g: 4, h: 10 });
-    assert.equal(Object.values(out).reduce((s, n) => s + n, 0), total);
+    assert.equal(
+      Object.values(out).reduce((s, n) => s + n, 0),
+      total,
+    );
   }
 });
 
 test('budget lines sum to the total for every event type and preference mix', () => {
   for (const type of ['wedding', 'birthday', 'community']) {
-    for (const prefs of [[], ['kids'], ['lowkey', 'outdoor', 'tech'], ['kids', 'lowkey', 'outdoor', 'tech', 'elders', 'vegetarian']]) {
+    for (const prefs of [
+      [],
+      ['kids'],
+      ['lowkey', 'outdoor', 'tech'],
+      ['kids', 'lowkey', 'outdoor', 'tech', 'elders', 'vegetarian'],
+    ]) {
       const p = plan({ type, prefs, budget: 123_457 });
-      assert.equal(p.budget.lines.reduce((s, l) => s + l.amount, 0), 123_457);
-      assert.equal(p.budget.lines.reduce((s, l) => s + l.pct, 0), 100);
+      assert.equal(
+        p.budget.lines.reduce((s, l) => s + l.amount, 0),
+        123_457,
+      );
+      assert.equal(
+        p.budget.lines.reduce((s, l) => s + l.pct, 0),
+        100,
+      );
       assert.ok(p.budget.lines.some((l) => l.id === 'contingency'));
       assert.ok(p.budget.lines.every((l) => l.amount >= 0));
     }
@@ -95,7 +119,8 @@ test('date helpers', () => {
 test('guest-count rules switch on exactly at their thresholds', () => {
   const names = (guests) => plan({ guests }).vendors.map((v) => v.name);
   const crowdMilestone = (guests) => plan({ guests }).timeline.milestones.some((m) => /crowd & parking/i.test(m.title));
-  const largeWarning = (guests) => plan({ guests, budget: 5_000_000 }).budget.warnings.some((w) => /Large guest list/.test(w));
+  const largeWarning = (guests) =>
+    plan({ guests, budget: 5_000_000 }).budget.warnings.some((w) => /Large guest list/.test(w));
   assert.ok(!names(149).includes('Security / crowd marshals'));
   assert.ok(names(150).includes('Security / crowd marshals'));
   assert.ok(!crowdMilestone(200));

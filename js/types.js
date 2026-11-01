@@ -29,7 +29,8 @@
 /**
  * @typedef {object} Plan
  * @property {EventInput} input
- * @property {{ total: number, perGuest: number, cateringPerHead: number, lines: BudgetLine[], warnings: string[] }} budget
+ * @property {{ total: number, perGuest: number, cateringPerHead: number,
+ *   lines: BudgetLine[], warnings: string[] }} budget
  * @property {{ milestones: { id: string, title: string, detail: string, date: string, daysBefore: number }[],
  *   daysAvailable: number, idealDays: number, compressed: boolean }} timeline
  * @property {{ id: string, name: string, category: string, priority: string, note: string, bookBy: string }[]} vendors
@@ -38,7 +39,8 @@
 
 /**
  * @typedef {{ title: string, description: string }} AiItem
- * @typedef {{ ideas: AiItem[], vendorTasks: AiItem[], budgetTips: string[], timelineNotes: string[], tips: string[] }} AiPlan
+ * @typedef {{ ideas: AiItem[], vendorTasks: AiItem[], budgetTips: string[],
+ *   timelineNotes: string[], tips: string[] }} AiPlan
  */
 
 export {};

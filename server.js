@@ -10,7 +10,11 @@ import { join, extname, normalize } from 'node:path';
 import { handleApi, SECURITY_HEADERS } from './api/handlers.js';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
+const TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+};
 const STATIC = new Set(['index.html', 'css', 'js']);
 
 /** Loads KEY=value lines from a .env file into process.env, never overriding variables that are already set. */
@@ -28,7 +32,8 @@ const send = (res, status, body, type = 'application/json', extraHeaders = {}) =
 };
 
 /** API answers are per-request and must never be cached. */
-const sendJson = (res, status, body, headers = {}) => send(res, status, body, 'application/json', { ...headers, 'cache-control': 'no-store' });
+const sendJson = (res, status, body, headers = {}) =>
+  send(res, status, body, 'application/json', { ...headers, 'cache-control': 'no-store' });
 
 async function readJson(req, limit = 10_000) {
   let size = 0;
@@ -46,7 +51,11 @@ async function handleStatic(req, res, pathname) {
   const rel = normalize(pathname === '/' ? 'index.html' : pathname.slice(1));
   if (rel.startsWith('..') || !STATIC.has(rel.split(/[\\/]/)[0])) return send(res, 404, 'Not found', 'text/plain');
   let body;
-  try { body = await readFile(join(root, rel)); } catch { return send(res, 404, 'Not found', 'text/plain'); }
+  try {
+    body = await readFile(join(root, rel));
+  } catch {
+    return send(res, 404, 'Not found', 'text/plain');
+  }
 
   const etag = `"${createHash('sha1').update(body).digest('base64url')}"`;
   const headers = { etag, 'cache-control': 'no-cache', vary: 'accept-encoding' };
@@ -73,7 +82,11 @@ export function createApp() {
 
 /** @returns {string | null} the path of a request URL, or null when it cannot be parsed (for example "//") */
 function pathOf(url) {
-  try { return new URL(url ?? '/', 'http://localhost').pathname; } catch { return null; }
+  try {
+    return new URL(url ?? '/', 'http://localhost').pathname;
+  } catch {
+    return null;
+  }
 }
 
 async function route(req, res) {
@@ -96,5 +109,9 @@ async function route(req, res) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   loadEnv();
   const port = Number(process.env.PORT) || 8080;
-  createApp().listen(port, () => console.log(`EventMate AI on http://localhost:${port}${process.env.DEEPSEEK_API_KEY ? '' : ' (AI disabled: DEEPSEEK_API_KEY not set)'}`));
+  createApp().listen(port, () =>
+    console.log(
+      `EventMate AI on http://localhost:${port}${process.env.DEEPSEEK_API_KEY ? '' : ' (AI disabled: DEEPSEEK_API_KEY not set)'}`,
+    ),
+  );
 }

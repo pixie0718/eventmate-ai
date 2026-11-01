@@ -60,7 +60,8 @@ function budgetWarnings(input, perGuest) {
   } else if (perGuest < baseline) {
     warnings.push('Budget per guest is on the tight side. Prioritise must-have vendors and keep the buffer.');
   }
-  if (input.guests > LARGE_EVENT_GUESTS) warnings.push('Large guest list: lock the venue and caterer early and plan crowd flow.');
+  if (input.guests > LARGE_EVENT_GUESTS)
+    warnings.push('Large guest list: lock the venue and caterer early and plan crowd flow.');
   return warnings;
 }
 

@@ -44,7 +44,11 @@ export function parseAiResponse(text) {
   const bad = (cause) => new Error('The AI reply was not in the expected format.', { cause });
   if (start === -1 || end <= start) throw bad();
   let data;
-  try { data = JSON.parse(raw.slice(start, end + 1)); } catch (err) { throw bad(err); }
+  try {
+    data = JSON.parse(raw.slice(start, end + 1));
+  } catch (err) {
+    throw bad(err);
+  }
   const result = {
     ideas: cleanItems(data.ideas, LIMITS.ideas),
     vendorTasks: cleanItems(data.vendorTasks, LIMITS.vendorTasks),

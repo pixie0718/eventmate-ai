@@ -18,16 +18,26 @@ export function buildVendors(input, budget, today) {
   const lineIds = new Set(budget.lines.map((l) => l.id));
   const categoryFor = (...candidates) => candidates.find((id) => lineIds.has(id)) ?? FALLBACK_CATEGORY;
 
-  const base = VENDORS[input.type].map(([name, cat, priority, lead, note]) => ({ name, cat: categoryFor(cat), priority, lead, note }));
-  const extras = EXTRA_VENDORS
-    .filter(({ when }) => appliesTo(when, input))
-    .flatMap(({ vendors }) => vendors.map(({ cats, ...v }) => ({ ...v, cat: categoryFor(...cats) })));
+  const base = VENDORS[input.type].map(([name, cat, priority, lead, note]) => ({
+    name,
+    cat: categoryFor(cat),
+    priority,
+    lead,
+    note,
+  }));
+  const extras = EXTRA_VENDORS.filter(({ when }) => appliesTo(when, input)).flatMap(({ vendors }) =>
+    vendors.map(({ cats, ...v }) => ({ ...v, cat: categoryFor(...cats) })),
+  );
 
   return [...base, ...extras]
     .map((v, i) => {
       const bookBy = addDays(event, -Math.round(v.lead * factor));
       return {
-        id: `v${i}`, name: v.name, category: v.cat, priority: v.priority, note: v.note,
+        id: `v${i}`,
+        name: v.name,
+        category: v.cat,
+        priority: v.priority,
+        note: v.note,
         bookBy: formatDate(bookBy < today ? today : bookBy),
       };
     })

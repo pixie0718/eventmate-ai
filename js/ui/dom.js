@@ -20,7 +20,10 @@ export const errorMessage = (err) => (err instanceof Error ? err.message : Strin
 
 /**
  * Creates an element. `class` and `text` are special props; everything else becomes an attribute.
- * @param {string} tag @param {Record<string, string>} [props] @param {...(Node | string)} children @returns {HTMLElement}
+ * @param {string} tag
+ * @param {Record<string, string>} [props]
+ * @param {...(Node | string)} children
+ * @returns {HTMLElement}
  */
 export function el(tag, props = {}, ...children) {
   const node = document.createElement(tag);

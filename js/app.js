@@ -62,7 +62,9 @@ function onPickEventType(button) {
   const select = $select('type');
   select.value = button.dataset.type ?? select.value;
   syncEventTypeCards();
-  $('form-heading').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  $('form-heading').scrollIntoView({
+    behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+  });
   select.focus({ preventScroll: true });
 }
 

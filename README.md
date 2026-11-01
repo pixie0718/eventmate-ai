@@ -19,7 +19,7 @@ A browser-based planning assistant for **weddings, birthdays and community event
 | Smart, dynamic assistant | Form → rule engine → optional AI personalisation and a Q&A chat, all driven by the user's own context |
 | Logical decision making from user context | Event type, days left, budget per guest, kids/elders/outdoor/tech preferences and guest count each change the budget split, deadlines, vendors and ideas; tight schedules compress every deadline |
 | Practical, real-world usability | Real currencies, realistic lead times, a ticked checklist that is remembered, print/PDF and JSON export, works without AI |
-| Clean, maintainable code | Small pure modules, data separated from logic, JSDoc types checked by `tsc`, ESLint, 93 tests with about 99% line coverage |
+| Clean, maintainable code | Small pure modules, data separated from logic, JSDoc types checked by `tsc`, ESLint, 98 tests with about 99% line coverage |
 | Security | Key only on the server, strict CSP, validated input and AI output, prompt-injection fencing, rate limiting |
 | Accessibility | Axe-audited, WCAG AA contrast tests, labelled controls, keyboard and screen-reader friendly |
 
@@ -97,7 +97,7 @@ Netlify's free plan stops a function after about 10 s, so the function gives Dee
 Axe audit and contrast tests run in CI. Skip link, labelled controls, `aria-invalid` + `role="alert"` errors with focus on the first bad field, programmatic focus on results, `aria-live` status messages, real `<table>` and checkbox lists (chart bars are decorative), 44 px touch targets, visible focus, light/dark themes, reduced-motion support and a print stylesheet.
 
 ## Testing
-`tests/` (93 tests, about 99% line coverage via `npm run test:coverage`): template-data integrity (every budget adds up to 100%, every vendor maps to a budget line), budget invariants across all types/preferences, timeline compression and ordering, context-driven vendors/ideas, determinism, input validation edge cases, AI prompts and response parsing, personalisation and chat requests, error mapping, timeouts, the AI-status fallback, the server and the Netlify function (static allow-list, key stays server-side, validation, JSON-only posts, cooldown and `Retry-After`, timeouts, `.env` loading, build output), storage failures, browser-level UI tests (the real page and `app.js` in jsdom: validation, rendering, ticking tasks, AI boxes, chat, download, restoring a saved event, failure fallback), an axe accessibility audit of the rendered page, WCAG AA colour-contrast maths for both themes, and static security guards (CSP, no inline code, no dangerous sinks, labels). CI runs them on every push.
+`tests/` (98 tests, about 99% line coverage via `npm run test:coverage`): template-data integrity (every budget adds up to 100%, every vendor maps to a budget line), budget invariants across all types/preferences, timeline compression and ordering, context-driven vendors/ideas, determinism, input validation edge cases, AI prompts and response parsing, personalisation and chat requests, error mapping, timeouts, the AI-status fallback, the server and the Netlify function (static allow-list, key stays server-side, validation, JSON-only posts, cooldown and `Retry-After`, timeouts, `.env` loading, build output), storage failures, browser-level UI tests (the real page and `app.js` in jsdom: validation, rendering, ticking tasks, AI boxes, chat, download, restoring a saved event, failure fallback), an axe accessibility audit of the rendered page, WCAG AA colour-contrast maths for both themes, and static security guards (CSP, no inline code, no dangerous sinks, labels). CI runs them on every push.
 
 ## How the solution works
 1. The user fills in one form: event type, name, date, guests, budget, currency, city, style and preferences.
@@ -125,8 +125,9 @@ js/data/            budget, timeline, vendor and idea templates (data only)
 js/chart.js         donut chart geometry (pure)
 js/ai/              prompts.js (prompt building), parse.js (response validation), client.js (requests to our API)
 js/types.js         shared JSDoc types
-js/ui/              dom helpers, storage, form, rendering, AI panel
+js/ui/              dom helpers, formatting, storage, form, rendering, AI panel
 tests/              node:test suites
+.prettierrc         code style (Prettier, 120 columns); `npm run format` fixes it, CI checks it
 SECURITY.md         how to report a vulnerability and what is already covered
 ```
 
