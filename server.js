@@ -13,8 +13,8 @@ const root = fileURLToPath(new URL('.', import.meta.url));
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 const STATIC = new Set(['index.html', 'css', 'js']);
 
-function loadEnv() {
-  const file = join(root, '.env');
+/** Loads KEY=value lines from a .env file into process.env, never overriding variables that are already set. */
+export function loadEnv(file = join(root, '.env')) {
   if (!existsSync(file)) return;
   for (const line of readFileSync(file, 'utf8').split('\n')) {
     const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
@@ -28,7 +28,7 @@ const send = (res, status, body, type = 'application/json', extraHeaders = {}) =
 };
 
 /** API answers are per-request and must never be cached. */
-const sendJson = (res, status, body) => send(res, status, body, 'application/json', { 'cache-control': 'no-store' });
+const sendJson = (res, status, body, headers = {}) => send(res, status, body, 'application/json', { ...headers, 'cache-control': 'no-store' });
 
 async function readJson(req, limit = 10_000) {
   let size = 0;
@@ -61,16 +61,36 @@ async function handleStatic(req, res, pathname) {
 /** @returns {import('node:http').Server} the HTTP server (not yet listening) */
 export function createApp() {
   return createServer(async (req, res) => {
-    const { pathname } = new URL(req.url ?? '/', 'http://localhost');
-    if (pathname.startsWith('/api/')) {
-      const { status, body } = await handleApi({
-        pathname, method: req.method ?? 'GET', readBody: () => readJson(req), client: String(req.socket.remoteAddress),
-      });
-      return sendJson(res, status, body);
+    // One bad request must never take the whole server down, so every failure becomes a plain error response.
+    try {
+      await route(req, res);
+    } catch {
+      if (!res.headersSent) send(res, 500, 'Server error', 'text/plain');
+      else res.end();
     }
-    if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed', 'text/plain');
-    return handleStatic(req, res, pathname);
   });
+}
+
+/** @returns {string | null} the path of a request URL, or null when it cannot be parsed (for example "//") */
+function pathOf(url) {
+  try { return new URL(url ?? '/', 'http://localhost').pathname; } catch { return null; }
+}
+
+async function route(req, res) {
+  const pathname = pathOf(req.url);
+  if (pathname === null) return send(res, 400, 'Bad request', 'text/plain');
+  if (pathname.startsWith('/api/')) {
+    const { status, body, headers } = await handleApi({
+      pathname,
+      method: req.method ?? 'GET',
+      contentType: req.headers['content-type'],
+      readBody: () => readJson(req),
+      client: String(req.socket.remoteAddress),
+    });
+    return sendJson(res, status, body, headers);
+  }
+  if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed', 'text/plain');
+  return handleStatic(req, res, pathname);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

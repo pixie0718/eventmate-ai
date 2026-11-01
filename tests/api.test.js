@@ -11,9 +11,10 @@ import { formatDate, addDays } from '../js/dates.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const input = { type: 'wedding', name: 'A & B', date: formatDate(addDays(new Date(), 90)), guests: 100, budget: 500000, currency: 'INR', vibe: 'modern', prefs: [] };
+const JSON_HEADERS = { 'content-type': 'application/json' };
 let seq = 0;
 const call = (pathname, body, extra = {}) => handleApi({
-  pathname, method: 'POST', client: `test-${++seq}`, readBody: async () => body, ...extra,
+  pathname, method: 'POST', contentType: 'application/json', client: `test-${++seq}`, readBody: async () => body, ...extra,
 });
 
 /** Runs fn with DEEPSEEK_API_KEY set (or removed) and fetch replaced, then restores both. */
@@ -45,7 +46,7 @@ test('AI endpoints: 503 without a key, 400 for bad input or body, 200 with the m
     assert.equal((await call('/api/chat', { input: { ...input, guests: -5 } })).status, 400);
     assert.equal((await call('/api/chat', null, { readBody: async () => { throw new Error('bad json'); } })).status, 400);
     const res = await call('/api/personalize', { input, notes: 'vegan' });
-    assert.deepEqual(res, { status: 200, body: { text: 'hello' } });
+    assert.deepEqual(res, { status: 200, body: { text: 'hello' }, headers: {} });
   });
 });
 
@@ -56,7 +57,9 @@ test('AI endpoints: the server builds the prompt, caps tokens and rate-limits pe
     await call('/api/chat', { input, question: 'cut 10%?' }, { client: 'same' });
     assert.match(sent.messages[0].content, /cut 10%\?/);
     assert.ok(sent.max_tokens <= 450);
-    assert.equal((await call('/api/chat', { input }, { client: 'same' })).status, 429);
+    const limited = await call('/api/chat', { input }, { client: 'same' });
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers['retry-after'], '3', 'tells the client when to retry');
     assert.equal((await call('/api/personalize', { input }, { client: 'same' })).status, 200, 'separate bucket per endpoint');
     assert.ok(sent.max_tokens <= 700);
   });
@@ -74,14 +77,14 @@ test('AI endpoints: upstream timeouts and errors become clean JSON errors', asyn
 test('Netlify function: routes, security headers, no-store and a clean answer', async () => {
   assert.deepEqual(config.path, ['/api/status', '/api/personalize', '/api/chat']);
   await withEnv({ upstream: ok('from model') }, async () => {
-    const req = new Request('https://site.netlify.app/api/chat', { method: 'POST', body: JSON.stringify({ input, question: 'hi' }) });
+    const req = new Request('https://site.netlify.app/api/chat', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ input, question: 'hi' }) });
     const res = await netlifyApi(req, { ip: '203.0.113.9' });
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), { text: 'from model' });
     assert.equal(res.headers.get('cache-control'), 'no-store');
     assert.equal(res.headers.get('x-frame-options'), 'DENY');
 
-    const huge = new Request('https://site.netlify.app/api/chat', { method: 'POST', body: 'x'.repeat(20_000) });
+    const huge = new Request('https://site.netlify.app/api/chat', { method: 'POST', headers: JSON_HEADERS, body: 'x'.repeat(20_000) });
     assert.equal((await netlifyApi(huge, { ip: '203.0.113.10' })).status, 400);
   });
 });
@@ -101,4 +104,40 @@ test('build-static copies only the browser files into dist/', () => {
   assert.ok(existsSync(join(root, 'dist/js/app.js')));
   assert.ok(statSync(join(root, 'dist/index.html')).size > 1000);
   for (const secret of ['.env', 'server.js', 'api', 'tests', 'netlify']) assert.equal(existsSync(join(root, 'dist', secret)), false, secret);
+});
+
+test('POST endpoints reject anything that is not JSON before doing any work', async () => {
+  await withEnv({ upstream: ok('never reached') }, async () => {
+    for (const contentType of [undefined, null, 'text/plain', 'application/x-www-form-urlencoded', 'multipart/form-data']) {
+      assert.equal((await call('/api/chat', { input }, { contentType })).status, 415, String(contentType));
+    }
+    assert.equal((await call('/api/chat', { input }, { contentType: 'application/json; charset=utf-8' })).status, 200);
+  });
+});
+
+test('Netlify function: passes Retry-After through and rejects non-JSON posts', async () => {
+  await withEnv({ upstream: ok('x') }, async () => {
+    const request = (headers) => new Request('https://site.netlify.app/api/chat', { method: 'POST', headers, body: JSON.stringify({ input, question: 'hi' }) });
+    assert.equal((await netlifyApi(request({ 'content-type': 'text/plain' }), { ip: '203.0.113.20' })).status, 415);
+    assert.equal((await netlifyApi(request(JSON_HEADERS), { ip: '203.0.113.21' })).status, 200);
+    const limited = await netlifyApi(request(JSON_HEADERS), { ip: '203.0.113.21' });
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get('retry-after'), '3');
+  });
+});
+
+test('the cooldown table forgets old clients instead of growing forever', async () => {
+  const realNow = Date.now;
+  let clock = realNow();
+  Date.now = () => clock;
+  try {
+    await withEnv({ upstream: ok('x') }, async () => {
+      for (let i = 0; i < 1010; i++) await call('/api/chat', { input }, { client: `crowd-${i}` });
+      clock += 4000; // every earlier client is past its cooldown
+      assert.equal((await call('/api/chat', { input }, { client: 'crowd-0' })).status, 200);
+      assert.equal((await call('/api/chat', { input }, { client: 'crowd-0' })).status, 429);
+    });
+  } finally {
+    Date.now = realNow;
+  }
 });

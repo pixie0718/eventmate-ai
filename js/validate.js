@@ -10,10 +10,12 @@ export const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP'];
 // eslint-disable-next-line no-control-regex -- matching control characters is the whole point
 export const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 
+/** Removes control characters (used for model output and untrusted text). @param {unknown} value @returns {string} */
+export const stripControl = (value) => String(value ?? '').replace(CONTROL_CHARS, '');
+
 /** Strips control characters, collapses spaces and caps the length. @param {unknown} value @param {number} max @returns {string} */
 export function sanitizeText(value, max) {
-  return String(value ?? '')
-    .replace(CONTROL_CHARS, '')
+  return stripControl(value)
     .replace(/[ \t]+/g, ' ')
     .trim()
     .slice(0, max);

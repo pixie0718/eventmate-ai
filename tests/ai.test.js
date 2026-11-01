@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildPlan } from '../js/planner.js';
-import { buildPrompt, buildChatPrompt, parseAiResponse, parseChatReply, requestAiPlan, requestAiChat, fetchAiAvailable } from '../js/ai.js';
+import { buildPrompt, buildChatPrompt } from '../js/ai/prompts.js';
+import { parseAiResponse, parseChatReply } from '../js/ai/parse.js';
+import { requestAiPlan, requestAiChat, fetchAiAvailable } from '../js/ai/client.js';
 
 const plan = buildPlan({ type: 'wedding', name: 'A & B', date: '2027-01-01', guests: 100, budget: 500000, currency: 'INR', city: 'Pune', vibe: 'modern', prefs: ['outdoor'] }, new Date(2026, 0, 1));
 const reply = (obj, status = 200) => async () => ({ ok: status < 400, status, json: async () => obj });

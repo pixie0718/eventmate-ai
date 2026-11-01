@@ -12,7 +12,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build
-      - run: npm audit --audit-level=critical
-        continue-on-error: true
+      # The app ships no runtime dependencies, so this must always be clean.
+      - run: npm audit --omit=dev --audit-level=high

@@ -2,9 +2,10 @@
 // Each call takes plain values and returns { status, body }, so it is easy to test.
 import { validateInput } from '../js/validate.js';
 import { buildPlan } from '../js/planner.js';
-import { buildPrompt, buildChatPrompt } from '../js/ai.js';
+import { buildPrompt, buildChatPrompt } from '../js/ai/prompts.js';
 
 const COOLDOWN_MS = 3000;
+const RETRY_AFTER_SECONDS = String(Math.ceil(COOLDOWN_MS / 1000));
 const MAX_TRACKED_CLIENTS = 1000;
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TOKENS = { personalize: 700, chat: 450 };
@@ -21,7 +22,8 @@ export const SECURITY_HEADERS = {
   'cross-origin-opener-policy': 'same-origin',
 };
 
-const reply = (status, body) => ({ status, body });
+const reply = (status, body, headers = {}) => ({ status, body, headers });
+const isJson = (contentType) => /^application\/json\s*(;|$)/i.test(contentType ?? '');
 
 /** Remembers when each client last called an endpoint; returns true while still cooling down. */
 function isCoolingDown(client) {
@@ -63,16 +65,19 @@ async function askModel(prompt, maxTokens, timeoutMs) {
  * @param {string} request.method
  * @param {() => Promise<any>} request.readBody  parses the JSON body (may throw)
  * @param {string} request.client  identifies the caller for the cooldown
+ * @param {string | null} [request.contentType]  the request's Content-Type; POST bodies must be JSON
  * @param {number} [request.timeoutMs]  upstream timeout (Netlify's free plan allows about 10 s per function)
- * @returns {Promise<{ status: number, body: object }>}
+ * @returns {Promise<{ status: number, body: object, headers: Record<string, string> }>}
  */
-export async function handleApi({ pathname, method, readBody, client, timeoutMs = DEFAULT_TIMEOUT_MS }) {
+export async function handleApi({ pathname, method, readBody, client, contentType, timeoutMs = DEFAULT_TIMEOUT_MS }) {
   if (pathname === '/api/status') return reply(200, { ai: Boolean(process.env.DEEPSEEK_API_KEY) });
   const kind = { '/api/personalize': 'personalize', '/api/chat': 'chat' }[pathname];
   if (!kind) return reply(404, { error: 'not found' });
   if (method !== 'POST') return reply(405, { error: 'method' });
+  // A JSON content type cannot be sent by a plain cross-site form, so other sites cannot spend our AI quota.
+  if (!isJson(contentType)) return reply(415, { error: 'content type must be application/json' });
   if (!process.env.DEEPSEEK_API_KEY) return reply(503, { error: 'not configured' });
-  if (isCoolingDown(`${client}${pathname}`)) return reply(429, { error: 'rate limited' });
+  if (isCoolingDown(`${client}${pathname}`)) return reply(429, { error: 'rate limited' }, { 'retry-after': RETRY_AFTER_SECONDS });
 
   let body;
   try { body = await readBody(); } catch { return reply(400, { error: 'bad request' }); }

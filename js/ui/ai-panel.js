@@ -1,6 +1,6 @@
 // The AI parts of the page: personalisation of the plan and the Q&A chat.
 // Everything here is optional: if the AI is off or fails, the rule-based plan stays untouched.
-import { requestAiPlan, requestAiChat, fetchAiAvailable } from '../ai.js';
+import { requestAiPlan, requestAiChat, fetchAiAvailable } from '../ai/client.js';
 import { $, $button, $input, el, errorMessage } from './dom.js';
 
 const COOLDOWN_MS = 3000;

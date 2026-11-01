@@ -8,9 +8,10 @@ const UPSTREAM_TIMEOUT_MS = 8500;
 
 export default async (req, context) => {
   const { pathname } = new URL(req.url);
-  const { status, body } = await handleApi({
+  const { status, body, headers } = await handleApi({
     pathname,
     method: req.method,
+    contentType: req.headers.get('content-type'),
     client: context?.ip ?? 'unknown',
     timeoutMs: UPSTREAM_TIMEOUT_MS,
     readBody: async () => {
@@ -19,7 +20,7 @@ export default async (req, context) => {
       return JSON.parse(text);
     },
   });
-  return Response.json(body, { status, headers: { ...SECURITY_HEADERS, 'cache-control': 'no-store' } });
+  return Response.json(body, { status, headers: { ...SECURITY_HEADERS, ...headers, 'cache-control': 'no-store' } });
 };
 
 export const config = { path: ['/api/status', '/api/personalize', '/api/chat'] };

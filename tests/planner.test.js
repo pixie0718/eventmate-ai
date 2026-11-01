@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPlan, allocate, daysBetween, parseDate } from '../js/planner.js';
+import { buildPlan } from '../js/planner.js';
+import { allocate } from '../js/planner/budget.js';
+import { daysBetween, parseDate } from '../js/dates.js';
 
 const TODAY = new Date(2026, 0, 1);
 const base = { type: 'wedding', name: 'A & B', date: '2027-01-01', guests: 200, budget: 1_000_000, currency: 'INR', city: 'Pune', vibe: 'traditional', prefs: [] };
@@ -88,4 +90,44 @@ test('plans are deterministic', () => {
 
 test('date helpers', () => {
   assert.equal(daysBetween(parseDate('2026-01-01'), parseDate('2026-03-01')), 59);
+});
+
+test('guest-count rules switch on exactly at their thresholds', () => {
+  const names = (guests) => plan({ guests }).vendors.map((v) => v.name);
+  const crowdMilestone = (guests) => plan({ guests }).timeline.milestones.some((m) => /crowd & parking/i.test(m.title));
+  const largeWarning = (guests) => plan({ guests, budget: 5_000_000 }).budget.warnings.some((w) => /Large guest list/.test(w));
+  assert.ok(!names(149).includes('Security / crowd marshals'));
+  assert.ok(names(150).includes('Security / crowd marshals'));
+  assert.ok(!crowdMilestone(200));
+  assert.ok(crowdMilestone(201));
+  assert.ok(!largeWarning(300));
+  assert.ok(largeWarning(301));
+});
+
+test('a budget between half and the full baseline gets the milder warning', () => {
+  const warnings = plan({ guests: 200, budget: 200_000 }).budget.warnings; // INR 1000 per guest vs a 1500 baseline
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /tight side/);
+});
+
+test('currency changes the baseline the budget is judged against', () => {
+  assert.ok(plan({ guests: 100, budget: 100_000, currency: 'INR' }).budget.warnings.length > 0);
+  assert.equal(plan({ guests: 100, budget: 100_000, currency: 'GBP' }).budget.warnings.length, 0);
+});
+
+test('the tech preference moves budget to the sound / entertainment line', () => {
+  const pct = (p, id) => p.budget.lines.find((l) => l.id === id).pct;
+  const [plain, tech] = [plan(), plan({ prefs: ['tech'] })];
+  assert.equal(pct(tech, 'decor'), pct(plain, 'decor') - 2);
+  assert.equal(pct(tech, 'entertainment'), pct(plain, 'entertainment') + 2);
+  const [plainCommunity, techCommunity] = [plan({ type: 'community' }), plan({ type: 'community', prefs: ['tech'] })];
+  assert.equal(pct(techCommunity, 'outreach'), pct(plainCommunity, 'outreach') - 2);
+  assert.equal(pct(techCommunity, 'av'), pct(plainCommunity, 'av') + 2);
+});
+
+test('an event today has everything due now and a fully compressed plan', () => {
+  const p = plan({ date: '2026-01-01' });
+  assert.equal(p.timeline.daysAvailable, 0);
+  assert.ok(p.timeline.milestones.every((m) => m.date === '2026-01-01'));
+  assert.ok(p.vendors.every((v) => v.bookBy === '2026-01-01'));
 });

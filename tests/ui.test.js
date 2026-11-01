@@ -146,3 +146,32 @@ test('the rendered page has no accessibility violations (axe, structural rules)'
   const summary = Array.from(results.violations, (v) => `${v.id}: ${Array.from(v.nodes, (n) => n.target).join(' | ')}`);
   assert.deepEqual(summary, []);
 });
+
+test('download saves the plan as a JSON file and print opens the print dialog', async () => {
+  const realCreate = URL.createObjectURL;
+  const realRevoke = URL.revokeObjectURL;
+  const realClick = window.HTMLAnchorElement.prototype.click;
+  const realPrint = window.print;
+  let blob;
+  let link;
+  let printed = false;
+  URL.createObjectURL = (b) => { blob = b; return 'blob:test'; };
+  URL.revokeObjectURL = () => {};
+  window.HTMLAnchorElement.prototype.click = function click() { link = this; };
+  window.print = () => { printed = true; };
+  try {
+    $('download-button').click();
+    assert.equal(link.download, 'eventmate-plan.json');
+    assert.equal(link.getAttribute('href'), 'blob:test');
+    const saved = JSON.parse(await blob.text());
+    assert.equal(saved.input.name, 'Asha & Ravi');
+    assert.ok(saved.budget.lines.length > 0 && saved.timeline.milestones.length > 0);
+
+    $('print-button').click();
+    assert.equal(printed, true);
+  } finally {
+    Object.assign(URL, { createObjectURL: realCreate, revokeObjectURL: realRevoke });
+    window.HTMLAnchorElement.prototype.click = realClick;
+    window.print = realPrint;
+  }
+});

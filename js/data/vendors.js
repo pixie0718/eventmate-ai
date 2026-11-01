@@ -33,3 +33,27 @@ export const VENDORS = {
     ['Clean-up crew', 'supplies', 'should', 14, 'Agree on waste segregation.'],
   ],
 };
+
+// Extra vendors added on top of a template, same `when` rule as EXTRA_MILESTONES in timelines.js.
+// `cats` lists budget categories in order of preference; the first one the budget has is used.
+export const EXTRA_VENDORS = [
+  { when: { pref: 'outdoor' }, vendors: [
+    { name: 'Tent / canopy rental', cats: ['venue'], priority: 'must', lead: 45, note: 'Sidewalls help against rain and wind.' },
+    { name: 'Generator / power backup', cats: ['av', 'venue'], priority: 'should', lead: 30, note: 'Size it for sound and lighting.' },
+  ] },
+  { when: { minGuests: 150 }, vendors: [
+    { name: 'Security / crowd marshals', cats: ['safety', 'misc', 'venue'], priority: 'should', lead: 30, note: 'Roughly one marshal per 50 guests.' },
+  ] },
+  { when: { pref: 'kids' }, vendors: [
+    { name: 'Kids\' corner & supervisor', cats: ['entertainment', 'program'], priority: 'should', lead: 21, note: 'Safe play area with an adult in charge.' },
+  ] },
+  { when: { pref: 'elders' }, vendors: [
+    { name: 'Accessibility support', cats: ['venue'], priority: 'should', lead: 30, note: 'Ramp, reserved seats and drop-off point.' },
+  ] },
+  { when: { pref: 'vegetarian' }, vendors: [
+    { name: 'Pure-veg kitchen confirmation', cats: ['catering'], priority: 'should', lead: 30, note: 'Ask for a separate kitchen or certification.' },
+  ] },
+  { when: { pref: 'tech' }, vendors: [
+    { name: 'Live-stream operator', cats: ['av', 'photography', 'entertainment'], priority: 'nice', lead: 21, note: 'Test the internet speed at the venue.' },
+  ] },
+];

@@ -1,6 +1,7 @@
 // Entry point: owns the state and wires the form, buttons and renderers together.
-import { validateInput, PREFS } from './validate.js';
-import { buildPlan, formatDate } from './planner.js';
+import { validateInput } from './validate.js';
+import { buildPlan } from './planner.js';
+import { formatDate } from './dates.js';
 import { $, $input, $select, el } from './ui/dom.js';
 import { load, save } from './ui/storage.js';
 import { readForm, writeForm, showErrors } from './ui/form.js';
@@ -53,8 +54,10 @@ function syncEventTypeCards() {
   }
 }
 
-/** The hero cards pick the event type, then take the user to the form. */
-/** @param {HTMLElement} button */
+/**
+ * The hero cards pick the event type, then take the user to the form.
+ * @param {HTMLElement} button
+ */
 function onPickEventType(button) {
   const select = $select('type');
   select.value = button.dataset.type ?? select.value;
@@ -65,7 +68,6 @@ function onPickEventType(button) {
 
 function init() {
   $input('date').min = formatDate(new Date());
-  for (const p of PREFS) if (!document.querySelector(`input[value="${p}"]`)) console.warn('missing pref checkbox', p);
 
   for (const b of /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('.event-type'))) {
     b.addEventListener('click', () => onPickEventType(b));

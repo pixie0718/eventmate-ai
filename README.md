@@ -19,7 +19,7 @@ A browser-based planning assistant for **weddings, birthdays and community event
 | Smart, dynamic assistant | Form → rule engine → optional AI personalisation and a Q&A chat, all driven by the user's own context |
 | Logical decision making from user context | Event type, days left, budget per guest, kids/elders/outdoor/tech preferences and guest count each change the budget split, deadlines, vendors and ideas; tight schedules compress every deadline |
 | Practical, real-world usability | Real currencies, realistic lead times, a ticked checklist that is remembered, print/PDF and JSON export, works without AI |
-| Clean, maintainable code | Small pure modules, data separated from logic, JSDoc types checked by `tsc`, ESLint, 69 tests |
+| Clean, maintainable code | Small pure modules, data separated from logic, JSDoc types checked by `tsc`, ESLint, 93 tests with about 99% line coverage |
 | Security | Key only on the server, strict CSP, validated input and AI output, prompt-injection fencing, rate limiting |
 | Accessibility | Axe-audited, WCAG AA contrast tests, labelled controls, keyboard and screen-reader friendly |
 
@@ -38,7 +38,7 @@ npm run build      # dist/ for Netlify
 It also deploys as-is to GitHub Pages (static files only).
 
 ## Approach and logic
-The decision engine is deterministic, lives in `js/planner.js` and works offline.
+The decision engine is deterministic, lives in `js/planner.js` (one module per part in `js/planner/`) and works offline.
 
 | Context given by the user | What the plan does |
 |---|---|
@@ -86,7 +86,8 @@ Netlify's free plan stops a function after about 10 s, so the function gives Dee
 - Strict **Content-Security-Policy**: `default-src 'none'`, scripts/styles only from `'self'`, network only to its own origin (`connect-src 'self'`). No inline scripts, handlers or styles.
 - All user and AI text is rendered with `textContent`; `innerHTML` and friends are never used (enforced by a test).
 - Inputs are validated and sanitised (type, range, enum, length, control characters).
-- API key: lives only in the server's `.env` (git-ignored), never sent to the browser. The server re-validates input, sets the prompt itself (so it is not an open relay), and applies a 3 s per-client cooldown per endpoint (the tracking table is size-capped) and a 30 s upstream timeout.
+- API key: lives only in the server's `.env` (git-ignored), never sent to the browser. The server re-validates input, sets the prompt itself (so it is not an open relay), and applies a 3 s per-client cooldown per endpoint (answered with `429` and `Retry-After`; the tracking table is size-capped), a 10 KB body limit and a 30 s upstream timeout.
+- POST endpoints only accept `Content-Type: application/json` (`415` otherwise). A plain cross-site form cannot send that type, so other websites cannot use this server to spend the AI quota.
 - Prompt-injection hardening: free-text notes are fenced as untrusted data and the model output is schema-validated before display.
 - Only non-sensitive form data and checklist ticks are stored in `localStorage`.
 - Caveat: the in-memory rate limit is per process; add real rate limiting/auth before exposing it publicly.
@@ -96,14 +97,14 @@ Netlify's free plan stops a function after about 10 s, so the function gives Dee
 Axe audit and contrast tests run in CI. Skip link, labelled controls, `aria-invalid` + `role="alert"` errors with focus on the first bad field, programmatic focus on results, `aria-live` status messages, real `<table>` and checkbox lists (chart bars are decorative), 44 px touch targets, visible focus, light/dark themes, reduced-motion support and a print stylesheet.
 
 ## Testing
-`tests/` (69 tests, about 97% line coverage via `npm run test:coverage`): budget invariants across all types/preferences, timeline compression and ordering, context-driven vendors/ideas, determinism, input validation edge cases, AI prompts and response parsing, personalisation and chat requests, error mapping, timeouts, the AI-status fallback, the server and the Netlify function (static allow-list, key stays server-side, validation, cooldown, timeouts, build output), browser-level UI tests (the real page and `app.js` in jsdom: validation, rendering, ticking tasks, AI boxes, chat, failure fallback), an axe accessibility audit of the rendered page, WCAG AA colour-contrast maths for both themes, and static security guards (CSP, no inline code, no dangerous sinks, labels). CI runs them on every push.
+`tests/` (93 tests, about 99% line coverage via `npm run test:coverage`): template-data integrity (every budget adds up to 100%, every vendor maps to a budget line), budget invariants across all types/preferences, timeline compression and ordering, context-driven vendors/ideas, determinism, input validation edge cases, AI prompts and response parsing, personalisation and chat requests, error mapping, timeouts, the AI-status fallback, the server and the Netlify function (static allow-list, key stays server-side, validation, JSON-only posts, cooldown and `Retry-After`, timeouts, `.env` loading, build output), storage failures, browser-level UI tests (the real page and `app.js` in jsdom: validation, rendering, ticking tasks, AI boxes, chat, download, restoring a saved event, failure fallback), an axe accessibility audit of the rendered page, WCAG AA colour-contrast maths for both themes, and static security guards (CSP, no inline code, no dangerous sinks, labels). CI runs them on every push.
 
 ## How the solution works
 1. The user fills in one form: event type, name, date, guests, budget, currency, city, style and preferences.
 2. `validate.js` checks and sanitises every field, and shows accessible inline errors.
-3. `planner.js` turns the validated input into a plan: budget lines, dated milestones, vendors with book-by dates and ranked ideas.
+3. `planner.js` turns the validated input into a plan (`js/planner/` builds each part): budget lines, dated milestones, vendors with book-by dates and ranked ideas.
 4. `ui/render.js` draws the plan (summary, donut chart, tables, timeline rail, checklists). Ticks are saved in `localStorage`.
-5. Optionally, "Get AI ideas" posts the event to `/api/ideas`; the server asks DeepSeek and the schema-validated reply is shown.
+5. Optionally, "Get AI ideas" posts the event to `/api/personalize`; the server asks DeepSeek and the schema-validated reply is shown.
 6. The plan can be printed or downloaded as JSON.
 
 ## Structure
@@ -111,20 +112,22 @@ Axe audit and contrast tests run in CI. Skip link, labelled controls, `aria-inva
 index.html          page + CSP
 css/styles.css
 server.js           local / Node host: static files + the API
-api/handlers.js     the API logic shared by server.js and Netlify (key, validation, rate limit, DeepSeek call)
+api/handlers.js     the API logic shared by server.js and Netlify (key, JSON-only, validation, rate limit, DeepSeek call)
 netlify/functions/  Netlify Function wrapper around api/handlers.js
 scripts/            build-static.js (publishes only the browser files to dist/)
 netlify.toml        Netlify build, function and security headers
 js/app.js           entry point: state and wiring
 js/dates.js         calendar-date helpers (pure)
 js/validate.js      input validation & sanitising (pure)
-js/planner.js       budget / timeline / vendors / ideas engine (pure)
+js/planner.js       puts the plan together (pure)
+js/planner/         budget.js, timeline.js, vendors.js, ideas.js and shared rules (pure)
 js/data/            budget, timeline, vendor and idea templates (data only)
 js/chart.js         donut chart geometry (pure)
-js/ai.js            prompts, AI client, response validation
+js/ai/              prompts.js (prompt building), parse.js (response validation), client.js (requests to our API)
 js/types.js         shared JSDoc types
 js/ui/              dom helpers, storage, form, rendering, AI panel
 tests/              node:test suites
+SECURITY.md         how to report a vulnerability and what is already covered
 ```
 
 ## Assumptions
